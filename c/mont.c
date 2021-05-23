@@ -11,6 +11,7 @@
 // printf will use syscalls "ckb_debug" to print message to console
 #include <ckb_syscalls.h>
 
+// m' = -m^(-1) mod b
 static uint64_t ll_invert_limb(uint64_t a) {
   uint64_t inv;
 
@@ -81,17 +82,35 @@ static void mul_mont_n(limb_t ret[], const limb_t a[], const limb_t b[],
   for (i = 0; i < n; i++) ret[i] = (ret[i] & ~mask) | (tmp[i] & mask);
 }
 
+bool check_result(uint64_t* result, uint64_t* expected, size_t len) {
+  bool ret = true;
+  for (size_t i = 0; i < len; i++) {
+    if (result[i] != expected[i]) {
+      ret = false;
+      printf("The result is not same as expected: 0x%x, 0x%d at index %d\n",
+             result[i], expected[i], i);
+    }
+  }
+  if (ret) {
+    printf("Passed.\n");
+  }
+  return ret;
+}
+
 int main(int argc, const char* argv[]) {
   bool asm_version = false;
   bool c_version = false;
   bool both_version = false;
 
-  // TODO: use real data
+  uint64_t expected[4] = {0xe7f5addeb61a539a, 0x53bcacb7fd99f0f4,
+                          0x471d58e78e2d6b00, 0x6fc7};
   uint64_t result[4] = {0};
-  uint64_t a[4] = {0x6f670037f2160d85, 0x4ba135fdddd51d};
-  uint64_t b[4] = {0x77a8890197395bea, 0xd8d655f62d45aa, 0xe93b9};
-  const uint64_t N[4] = {0xa31828c498eff7b7, 0x155d73b9d6bf8cb5,
-                         0x7558dc923e23eb7e, 0xa00b4ddadf854};
+  uint64_t a[4] = {0x4fecd9c6bef4805b, 0xd0756fcc51b07b0f, 0x0ff21caf40d141c8,
+                   0x13a1};
+  uint64_t b[4] = {0x416f50773146a5a8, 0x3d0688a3ae92febb, 0xb70671c25ec783df,
+                   0x5c03};
+  const uint64_t N[4] = {0x0ea6dd724f352a8d, 0x68888ca48183dd72,
+                         0x8fa0b8b4ada1a38b, 0x76e4};
   uint64_t k = ll_invert_limb(N[0]);
 
   if (argc != 2) {
@@ -109,21 +128,19 @@ int main(int argc, const char* argv[]) {
   }
 
   if (asm_version || both_version) {
+    printf("Testing asm version ...\n");
     for (int i = 0; i < 1000; i++) {
       ll_u256_mont_mul(result, a, b, N, k);
     }
-    printf(
-        "returned from ll_u256_mont_mul(asm version): \n0x%x, 0x%x, 0x%x, "
-        "0x%x\n",
-        result[0], result[1], result[2], result[3]);
+    check_result(result, expected, 4);
   }
 
   if (c_version || both_version) {
+    printf("Testing C version ...\n");
     for (int i = 0; i < 1000; i++) {
       mul_mont_n(result, a, b, N, k, 4);
     }
-    printf("returned from mul_mont_n(C version): \n0x%x, 0x%x, 0x%x, 0x%x\n",
-           result[0], result[1], result[2], result[3]);
+    check_result(result, expected, 4);
   }
   printf("done\n");
   return 0;

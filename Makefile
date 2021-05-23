@@ -3,12 +3,16 @@ CC := $(TARGET)-gcc
 LD := $(TARGET)-gcc
 OBJCOPY := $(TARGET)-objcopy
 
+CLANG-CC = /usr/local/opt/llvm/bin/clang
+
 # -fno-builtin-printf must be used to use our own printf
 CFLAGS := -fPIC -O3 -fno-builtin-printf -fno-builtin-memcmp \
 -nostdinc -nostdlib -nostartfiles -fvisibility=hidden \
 -fdata-sections -ffunction-sections\
 -I deps/ckb-c-stdlib -I deps/ckb-c-stdlib/libc \
 -Wall -Werror -Wno-nonnull -Wno-nonnull-compare -Wno-unused-function -g
+
+CLANG-CFLAGS=-target riscv64-unknown-elf -march=rv64imc -mno-relax $(subst -nostartfiles,,$(subst -Wno-nonnull-compare,,$(CFLAGS))) 
 
 # used to generate assembly code
 ASM_CFLAGS := -S -O3 \
@@ -17,6 +21,8 @@ ASM_CFLAGS := -S -O3 \
 -I deps/ckb-c-stdlib -I deps/ckb-c-stdlib/libc
 
 LDFLAGS := -Wl,-static -Wl,--gc-sections
+
+CLANG-LDLAGS=$(subst -Wl,--gc-sections,,$(LDFLAGS))
 
 # docker pull nervos/ckb-riscv-gnu-toolchain:gnu-bionic-20191012
 BUILDER_DOCKER := nervos/ckb-riscv-gnu-toolchain@sha256:aae8a3f79705f67d505d1f1d5ddc694a4fd537ed1c7e9622420a470d59ba2ec3
@@ -31,6 +37,13 @@ build/hello: c/hello.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $<
 	$(OBJCOPY) --only-keep-debug $@ $@.debug
 	$(OBJCOPY) --strip-debug --strip-all $@
+
+### simple hello world by clang
+# TODO: 
+# 1. support entry in assembly
+# 2. support syscall
+build/hello2: c/hello2.c
+	$(CLANG-CC) $(CLANG-CFLAGS) $(CLANG-LDFLAGS) -o $@ $<
 
 ### test_asm
 build/asm.o: c/asm.S
