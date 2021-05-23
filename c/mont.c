@@ -97,6 +97,28 @@ bool check_result(uint64_t* result, uint64_t* expected, size_t len) {
   return ret;
 }
 
+
+// TODO: the cycles is expected to be 1824 cycles per mul_mont_n
+// but now it's 1240?
+// "Cycles = 1.24 M cycles", it depends on the data of a, b and N.
+int bench_384(void) {
+  printf("benchmark for 384 bits\n");
+  uint64_t result[6] = {0};
+  uint64_t a[6] = {0xce8c0cc97e7a3027, 0xfc15bac58616015,  0x158831ba1c2c4ea6,
+                   0x166188c234f8200b, 0x3b59569282528b5e, 0xd63a606f6afeba1};
+  uint64_t b[6] = {0x192f996e0ec92133, 0x9038456a15d49df3, 0x98f16fe4889fd109,
+                   0xd8c4a3ff44714ebc, 0x31740434d39a3eb9, 0xedfd8a69df4e386};
+  const uint64_t N[6] = {0xb9feffffffffaaab, 0x1eabfffeb153ffff,
+                         0x6730d2a0f6b0f624, 0x64774b84f38512bf,
+                         0x4b1ba7b6434bacd7, 0x1a0111ea397fe69a};
+  uint64_t k = ll_invert_limb(N[0]);
+  for (int i = 0; i < 1000; i++) {
+    mul_mont_n(result, a, b, N, k, 6);
+  }
+  printf("done\n");
+  return 0;
+}
+
 int main(int argc, const char* argv[]) {
   bool asm_version = false;
   bool c_version = false;
@@ -126,6 +148,9 @@ int main(int argc, const char* argv[]) {
   if (strcmp(argv[1], "-both") == 0) {
     both_version = true;
   }
+  if (strcmp(argv[1], "-bench384") == 0) {
+    return bench_384();
+  }
 
   if (asm_version || both_version) {
     printf("Testing asm version ...\n");
@@ -142,6 +167,7 @@ int main(int argc, const char* argv[]) {
     }
     check_result(result, expected, 4);
   }
+
   printf("done\n");
   return 0;
 }

@@ -87,6 +87,7 @@ run-mont:
 	ckb-vm-cli --bin build/mont -- -both
 	ckb-vm-cli --bin build/mont -- -asm
 	ckb-vm-cli --bin build/mont -- -c
+	ckb-vm-cli --bin build/mont -- -bench384
 
 
 fmt:
