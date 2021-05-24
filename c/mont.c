@@ -10,6 +10,7 @@
 
 // printf will use syscalls "ckb_debug" to print message to console
 #include <ckb_syscalls.h>
+#define LOOP_COUNT 1000
 
 // m' = -m^(-1) mod b
 static uint64_t ll_invert_limb(uint64_t a) {
@@ -24,7 +25,7 @@ static uint64_t ll_invert_limb(uint64_t a) {
   return inv;
 }
 
-void ll_u256_mont_mul(uint64_t rd[4], const uint64_t ad[4],
+__attribute__ ((noinline)) void ll_u256_mont_mul(uint64_t rd[4], const uint64_t ad[4],
                       const uint64_t bd[4], const uint64_t Nd[4], uint64_t k0);
 
 // blst's C version of mul_mont.
@@ -32,7 +33,7 @@ typedef uint64_t limb_t;
 typedef unsigned __int128 llimb_t;
 #define LIMB_T_BITS 64
 
-static void mul_mont_n(limb_t ret[], const limb_t a[], const limb_t b[],
+__attribute__ ((noinline)) static void mul_mont_n(limb_t ret[], const limb_t a[], const limb_t b[],
                        const limb_t p[], limb_t n0, size_t n) {
   llimb_t limbx;
   limb_t mask, borrow, mx, hi, tmp[n + 1], carry;
@@ -112,7 +113,7 @@ int bench_384(void) {
                          0x6730d2a0f6b0f624, 0x64774b84f38512bf,
                          0x4b1ba7b6434bacd7, 0x1a0111ea397fe69a};
   uint64_t k = ll_invert_limb(N[0]);
-  for (int i = 0; i < 1000; i++) {
+  for (int i = 0; i < LOOP_COUNT; i++) {
     mul_mont_n(result, a, b, N, k, 6);
   }
   printf("done\n");
@@ -154,7 +155,7 @@ int main(int argc, const char* argv[]) {
 
   if (asm_version || both_version) {
     printf("Testing asm version ...\n");
-    for (int i = 0; i < 1000; i++) {
+    for (int i = 0; i < LOOP_COUNT; i++) {
       ll_u256_mont_mul(result, a, b, N, k);
     }
     check_result(result, expected, 4);
@@ -162,7 +163,7 @@ int main(int argc, const char* argv[]) {
 
   if (c_version || both_version) {
     printf("Testing C version ...\n");
-    for (int i = 0; i < 1000; i++) {
+    for (int i = 0; i < LOOP_COUNT; i++) {
       mul_mont_n(result, a, b, N, k, 4);
     }
     check_result(result, expected, 4);

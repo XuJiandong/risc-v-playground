@@ -66,6 +66,7 @@ build/mont.o: c/mont.c
 
 build/mont: build/ll_u256_mont-riscv64.o build/mont.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
+	$(CC) -S $(subst -g,,$(CFLAGS)) -o build/mont.S c/mont.c
 	$(OBJCOPY) --only-keep-debug $@ $@.debug
 	$(OBJCOPY) --strip-debug --strip-all $@
 
@@ -83,12 +84,12 @@ run-hello:
 run-test-asm:
 	ckb-vm-cli --bin build/test_asm
 
-run-mont:
-	ckb-vm-cli --bin build/mont -- -both
-	ckb-vm-cli --bin build/mont -- -asm
-	ckb-vm-cli --bin build/mont -- -c
-	ckb-vm-cli --bin build/mont -- -bench384
+CKB_VM_CLI=ckb-vm-b-cli
 
+run-mont:
+	echo "using $(CKB_VM_CLI)"
+	$(CKB_VM_CLI) --bin build/mont -- -asm
+	$(CKB_VM_CLI) --bin build/mont -- -c
 
 fmt:
 	clang-format -i -style=Google $(wildcard c/*.c c/*.h)
@@ -99,3 +100,4 @@ clean:
 install-tools:
 	echo "start to install tool: ckb-vm-cli"
 	cargo install --git https://github.com/XuJiandong/ckb-vm-cli.git
+	cargo install --git https://github.com/XuJiandong/ckb-vm-cli.git --branch b-extension
