@@ -2,6 +2,7 @@ TARGET := riscv64-unknown-linux-gnu
 CC := $(TARGET)-gcc
 LD := $(TARGET)-gcc
 OBJCOPY := $(TARGET)-objcopy
+CKB_VM_CLI=ckb-vm-b-cli
 
 CLANG-CC = /usr/local/opt/llvm/bin/clang
 
@@ -79,12 +80,10 @@ c2asm:
 
 ### run
 run-hello:
-	ckb-vm-cli --bin build/hello
+	$(CKB_VM_CLI) --bin build/hello
 
 run-test-asm:
-	ckb-vm-cli --bin build/test_asm
-
-CKB_VM_CLI=ckb-vm-b-cli
+	$(CKB_VM_CLI) --bin build/test_asm
 
 run-mont:
 	echo "using $(CKB_VM_CLI)"
@@ -98,6 +97,6 @@ clean:
 	rm -rf build/*
 
 install-tools:
-	echo "start to install tool: ckb-vm-cli"
+	echo "start to install tool: ckb-vm-cli and ckb-vm-b-cli"
 	cargo install --git https://github.com/XuJiandong/ckb-vm-cli.git
 	cargo install --git https://github.com/XuJiandong/ckb-vm-cli.git --branch b-extension
