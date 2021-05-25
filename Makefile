@@ -55,8 +55,6 @@ build/test_asm.o: c/test_asm.c
 
 build/test_asm: build/test_asm.o build/asm.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
-	$(OBJCOPY) --only-keep-debug $@ $@.debug
-	$(OBJCOPY) --strip-debug --strip-all $@
 
 ### montgomery multiplicaton
 build/ll_u256_mont-riscv64.o: c/ll_u256_mont-riscv64.S

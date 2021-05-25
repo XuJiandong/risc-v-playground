@@ -11,11 +11,14 @@
 
 void void_call();
 uint32_t add(uint32_t a, uint32_t b);
+int print_hello(void);
 
 int main(int argc, const char* argv[]) {
   void_call();
   printf("void_call()\n");
   uint32_t c = add(100, 200);
   printf("add(100, 200) = %d\n", c);
+
+  print_hello();
   return 0;
 }
