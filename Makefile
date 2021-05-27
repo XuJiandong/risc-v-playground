@@ -1,4 +1,6 @@
 TARGET := riscv64-unknown-linux-gnu
+# other option 
+# TARGET := riscv64-unknown-elf
 CC := $(TARGET)-gcc
 LD := $(TARGET)-gcc
 OBJCOPY := $(TARGET)-objcopy
@@ -60,21 +62,29 @@ build/test_asm: build/test_asm.o build/asm.o
 build/ll_u256_mont-riscv64.o: c/ll_u256_mont-riscv64.S
 	$(CC) -c -DCKB_DECLARATION_ONLY $(CFLAGS) -o $@ $<
 
+build/mul_mont_384.o: c/mul_mont_384.S
+	$(CC) -c -DCKB_DECLARATION_ONLY $(CFLAGS) -o $@ $<
+
 build/mont.o: c/mont.c
 	$(CC) -c $(CFLAGS) -o $@ $<
 
-build/mont: build/ll_u256_mont-riscv64.o build/mont.o
+build/mont: build/ll_u256_mont-riscv64.o build/mul_mont_384.o build/mont.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
-	$(CC) -S $(subst -g,,$(CFLAGS)) -o build/mont.S c/mont.c
-	$(OBJCOPY) --only-keep-debug $@ $@.debug
-	$(OBJCOPY) --strip-debug --strip-all $@
+	$(CC) -S $(CFLAGS) -o build/mont.S c/mont.c
+
+### convert mul_mont_384_c_ref.c into asm version
+build/mul_mont_384_c_ref.s: c/mul_mont_384_c_ref.c
+	$(CC) -S $(subst -g,,$(CFLAGS)) -o $@ $<
+
+mont384-c2asm:
+	docker run --rm -v `pwd`:/code ${BUILDER_DOCKER} bash -c "cd /code && make build/mul_mont_384_c_ref.s"
 
 ### c2asm
-build/c2asm.s: c/c2asm.c
+build/c2asm.S: c/c2asm.c
 	$(CC) $(ASM_CFLAGS) -o $@ $<
 
 c2asm:
-	docker run --rm -v `pwd`:/code ${BUILDER_DOCKER} bash -c "cd /code && make build/c2asm.s"
+	docker run --rm -v `pwd`:/code ${BUILDER_DOCKER} bash -c "cd /code && make build/c2asm.S"
 
 ### run
 run-hello:
@@ -88,6 +98,13 @@ run-mont:
 	$(CKB_VM_CLI) --bin build/mont -- -asm
 	$(CKB_VM_CLI) --bin build/mont -- -c
 
+bench-mont-384:
+	$(CKB_VM_CLI) --bin build/mont -- -bench384
+	$(CKB_VM_CLI) --bin build/mont -- -bench384asm
+
+verify-mont-384:
+	$(CKB_VM_CLI) --bin build/mont -- -verify384
+
 fmt:
 	clang-format -i -style=Google $(wildcard c/*.c c/*.h)
 
@@ -96,5 +113,5 @@ clean:
 
 install-tools:
 	echo "start to install tool: ckb-vm-cli and ckb-vm-b-cli"
-	cargo install --git https://github.com/XuJiandong/ckb-vm-cli.git
+	cargo install --git https://github.com/XuJiandong/ckb-vm-cli.git --branch master
 	cargo install --git https://github.com/XuJiandong/ckb-vm-cli.git --branch b-extension

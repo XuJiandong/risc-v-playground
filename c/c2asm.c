@@ -18,3 +18,12 @@ uint64_t test_i(void) {
   uint64_t c = a + b;
   return c;
 }
+
+uint64_t g_int = 200;
+uint64_t g_array[20] = {0};
+uint8_t* g_string = "hello,world";
+
+uint64_t use_global_variables(void) {
+  g_array[0] = g_int;
+  return g_array[0];
+}

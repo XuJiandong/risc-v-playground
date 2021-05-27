@@ -11,6 +11,7 @@
 // printf will use syscalls "ckb_debug" to print message to console
 #include <ckb_syscalls.h>
 #define LOOP_COUNT 1000
+#define LOOP_COUNT2 100000
 
 // m' = -m^(-1) mod b
 static uint64_t ll_invert_limb(uint64_t a) {
@@ -25,8 +26,6 @@ static uint64_t ll_invert_limb(uint64_t a) {
   return inv;
 }
 
-__attribute__ ((noinline)) void ll_u256_mont_mul(uint64_t rd[4], const uint64_t ad[4],
-                      const uint64_t bd[4], const uint64_t Nd[4], uint64_t k0);
 
 // blst's C version of mul_mont.
 typedef uint64_t limb_t;
@@ -98,6 +97,10 @@ bool check_result(uint64_t* result, uint64_t* expected, size_t len) {
   return ret;
 }
 
+// asm version
+__attribute__ ((noinline)) void mul_mont_384(limb_t ret[], const limb_t a[], const limb_t b[], const limb_t p[], limb_t n0);
+__attribute__ ((noinline)) void ll_u256_mont_mul(uint64_t rd[4], const uint64_t ad[4],
+                      const uint64_t bd[4], const uint64_t Nd[4], uint64_t k0);
 
 // TODO: the cycles is expected to be 1824 cycles per mul_mont_n
 // but now it's 1240?
@@ -113,8 +116,52 @@ int bench_384(void) {
                          0x6730d2a0f6b0f624, 0x64774b84f38512bf,
                          0x4b1ba7b6434bacd7, 0x1a0111ea397fe69a};
   uint64_t k = ll_invert_limb(N[0]);
-  for (int i = 0; i < LOOP_COUNT; i++) {
+  for (int i = 0; i < LOOP_COUNT2; i++) {
     mul_mont_n(result, a, b, N, k, 6);
+  }
+  printf("done\n");
+  return 0;
+}
+
+
+int verify_384(void) {
+  printf("verify for 384 bits asm version\n");
+  uint64_t result[6] = {0};
+  uint64_t a[6] = {0xce8c0cc97e7a3027, 0xfc15bac58616015,  0x158831ba1c2c4ea6,
+                   0x166188c234f8200b, 0x3b59569282528b5e, 0xd63a606f6afeba1};
+  uint64_t b[6] = {0x192f996e0ec92133, 0x9038456a15d49df3, 0x98f16fe4889fd109,
+                   0xd8c4a3ff44714ebc, 0x31740434d39a3eb9, 0xedfd8a69df4e386};
+  const uint64_t N[6] = {0xb9feffffffffaaab, 0x1eabfffeb153ffff,
+                         0x6730d2a0f6b0f624, 0x64774b84f38512bf,
+                         0x4b1ba7b6434bacd7, 0x1a0111ea397fe69a};
+  uint64_t k = ll_invert_limb(N[0]);
+  mul_mont_n(result, a, b, N, k, 6);
+
+  uint64_t result2[6] = {0};
+  mul_mont_384(result2, a, b, N, k);
+  for (int i = 0; i < 6; i++) {
+    if (result[i] != result2[i]) {
+      printf("failed, wrong result at index %d: %lld(correct) vs %lld(wrong)\n", i, result[i], result2[2]);
+    }
+  }
+  printf("done\n");
+  return 0;
+}
+
+
+int bench_384_asm(void) {
+  printf("benchmark for 384 bits, asm version\n");
+  uint64_t result[6] = {0};
+  uint64_t a[6] = {0xce8c0cc97e7a3027, 0xfc15bac58616015,  0x158831ba1c2c4ea6,
+                   0x166188c234f8200b, 0x3b59569282528b5e, 0xd63a606f6afeba1};
+  uint64_t b[6] = {0x192f996e0ec92133, 0x9038456a15d49df3, 0x98f16fe4889fd109,
+                   0xd8c4a3ff44714ebc, 0x31740434d39a3eb9, 0xedfd8a69df4e386};
+  const uint64_t N[6] = {0xb9feffffffffaaab, 0x1eabfffeb153ffff,
+                         0x6730d2a0f6b0f624, 0x64774b84f38512bf,
+                         0x4b1ba7b6434bacd7, 0x1a0111ea397fe69a};
+  uint64_t k = ll_invert_limb(N[0]);
+  for (int i = 0; i < LOOP_COUNT2; i++) {
+    mul_mont_384(result, a, b, N, k);
   }
   printf("done\n");
   return 0;
@@ -151,6 +198,12 @@ int main(int argc, const char* argv[]) {
   }
   if (strcmp(argv[1], "-bench384") == 0) {
     return bench_384();
+  }
+  if (strcmp(argv[1], "-verify384") == 0) {
+    return verify_384();
+  }
+  if (strcmp(argv[1], "-bench384asm") == 0) {
+    return bench_384_asm();
   }
 
   if (asm_version || both_version) {
