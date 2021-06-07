@@ -27,6 +27,11 @@ LDFLAGS := -Wl,-static -Wl,--gc-sections
 
 CLANG-LDLAGS=$(subst -Wl,--gc-sections,,$(LDFLAGS))
 
+X64_CC := clang
+X64_CFLAGS := -fPIC -O1
+X64_LDFLAGS :=
+
+
 # docker pull nervos/ckb-riscv-gnu-toolchain:gnu-bionic-20191012
 BUILDER_DOCKER := nervos/ckb-riscv-gnu-toolchain@sha256:aae8a3f79705f67d505d1f1d5ddc694a4fd537ed1c7e9622420a470d59ba2ec3
 
@@ -57,6 +62,18 @@ build/test_asm.o: c/test_asm.c
 
 build/test_asm: build/test_asm.o build/asm.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
+
+### test_asm_x64
+build/asm_x64.o: c/asm_x64.S
+	$(X64_CC) -c $(X64_CFLAGS) -o $@ $<
+
+build/test_asm_x64.o: c/test_asm_x64.c
+	$(X64_CC) -c $(X64_CFLAGS) -o $@ $<
+	$(X64_CC) -S -c $(X64_CFLAGS) -o $@.S $<
+
+build/test_asm_x64: build/test_asm_x64.o build/asm_x64.o
+	$(X64_CC) $(X64_CFLAGS) $(X64_LDFLAGS) -o $@ $^
+
 
 ### montgomery multiplicaton
 build/ll_u256_mont-riscv64.o: c/ll_u256_mont-riscv64.S
@@ -105,6 +122,9 @@ run-hello:
 
 run-test-asm:
 	$(CKB_VM_CLI) --bin build/test_asm
+
+run-test-asm-x64: build/test_asm_x64
+	build/test_asm_x64
 
 run-mont:
 	echo "using $(CKB_VM_CLI)"
