@@ -30,7 +30,7 @@ CLANG-LDLAGS=$(subst -Wl,--gc-sections,,$(LDFLAGS))
 # docker pull nervos/ckb-riscv-gnu-toolchain:gnu-bionic-20191012
 BUILDER_DOCKER := nervos/ckb-riscv-gnu-toolchain@sha256:aae8a3f79705f67d505d1f1d5ddc694a4fd537ed1c7e9622420a470d59ba2ec3
 
-all: build/hello build/test_asm build/mont
+all: build/hello build/test_asm build/mont build/mont_s
 
 all-via-docker:
 	docker run --rm -v `pwd`:/code ${BUILDER_DOCKER} bash -c "cd /code && make"
@@ -65,6 +65,9 @@ build/ll_u256_mont-riscv64.o: c/ll_u256_mont-riscv64.S
 build/mul_mont_384.o: c/mul_mont_384.S
 	$(CC) -c -DCKB_DECLARATION_ONLY $(CFLAGS) -o $@ $<
 
+build/mul_mont_384_s.o: c/mul_mont_384_s.S
+	$(CC) -c -DCKB_DECLARATION_ONLY $(CFLAGS) -o $@ $<
+
 build/mont.o: c/mont.c
 	$(CC) -c $(CFLAGS) -o $@ $<
 
@@ -72,12 +75,22 @@ build/mont: build/ll_u256_mont-riscv64.o build/mul_mont_384.o build/mont.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
 	$(CC) -S $(CFLAGS) -o build/mont.S c/mont.c
 
+build/mont_s: build/ll_u256_mont-riscv64.o build/mul_mont_384_s.o build/mont.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
+
 ### convert mul_mont_384_c_ref.c into asm version
 build/mul_mont_384_c_ref.s: c/mul_mont_384_c_ref.c
 	$(CC) -S $(subst -g,,$(CFLAGS)) -o $@ $<
 
 mont384-c2asm:
 	docker run --rm -v `pwd`:/code ${BUILDER_DOCKER} bash -c "cd /code && make build/mul_mont_384_c_ref.s"
+
+# anohter try, with minimal size
+build/mul_mont_384_c_ref_s.s: c/mul_mont_384_c_ref.c
+	$(CC) -S $(subst -O3,-Os,$(subst -g,,$(CFLAGS))) -o $@ $<
+
+mont384-c2asm-s:
+	docker run --rm -v `pwd`:/code ${BUILDER_DOCKER} bash -c "cd /code && make build/mul_mont_384_c_ref_s.s"
 
 ### c2asm
 build/c2asm.S: c/c2asm.c
@@ -101,6 +114,11 @@ run-mont:
 bench-mont-384:
 	$(CKB_VM_CLI) --bin build/mont -- -bench384
 	$(CKB_VM_CLI) --bin build/mont -- -bench384asm
+
+bench-mont-384-s:
+	$(CKB_VM_CLI) --bin build/mont_s -- -bench384
+	$(CKB_VM_CLI) --bin build/mont_s -- -bench384asm
+
 
 verify-mont-384:
 	$(CKB_VM_CLI) --bin build/mont -- -verify384
