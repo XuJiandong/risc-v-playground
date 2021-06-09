@@ -1,9 +1,11 @@
-
+# TODO: optimization
+# 1. aggregate pushq operation
+# 2. don't carry if not needed (less sltu)
+# 3. adcq/sbbq
 
 import re
 import argparse
 import sys
-import os
 
 X64_TO_RISCV_REGS = {
     "rdi": "a0",
@@ -13,12 +15,11 @@ X64_TO_RISCV_REGS = {
     "r8": "a4",
     "r9": "a5",
 
-    # ra -
-    "rax": "a0",
+    "rax": "a6",
+
     "rsp": "sp",
     "rbp": "fp",
     "rbx": "s1",
-    # t2-t6 -
     "r10": "t0",
     "r11": "t1",
     "r12": "s2",
@@ -35,9 +36,17 @@ X64_TO_RISCV_REGS = {
     "flag_overflow": "t5",  # overflow
 
     "temp": "t6",
-    "temp2": "s6",
-    # s6-s11	-
+    "temp2": "a7",
+    # s7-s11	-
 }
+
+LABEL_INDEX = 0
+
+
+def gen_label():
+    global LABEL_INDEX
+    LABEL_INDEX += 1
+    return f".LABLE{LABEL_INDEX}"
 
 
 # make sure values are not duplicated
@@ -46,9 +55,8 @@ def check_sanity(mapping):
     for key in mapping:
         value = mapping[key]
         if value in map2:
-            if value != "a0":
-                print(f"{value} is duplicated.")
-                assert False
+            print(f"{value} is duplicated.")
+            assert False
         else:
             map2[value] = 1
 
@@ -140,7 +148,34 @@ RISCV_TEMP_REG2 = X64Operand("%temp2")
 
 
 class RiscvInstruction:
-    def __init__(self, opcode, *x64_operands):
+    def __init__(self, opcode, *x64_operands, raw=False, directive=False, label=False):
+        count = 0
+        if raw:
+            count += 1
+        if directive:
+            count += 1
+        if label:
+            count += 1
+        assert count <= 1
+
+        self.raw = False
+        self.directive = False
+        self.label = False
+        self.optimized = False
+        self.opcode = False
+
+        if raw:
+            self.raw = opcode
+            return
+        if directive:
+            self.directive = opcode
+            self.operands = list(x64_operands)
+            return
+
+        if label:
+            self.label = opcode
+            return
+
         self.opcode = opcode
         self.operands = list(x64_operands)
         for i in self.operands:
@@ -148,7 +183,28 @@ class RiscvInstruction:
                 print("the operand is not with wrong type", i)
                 assert False
 
+    def optimize(self):
+        self.optimized = True
+
+    def optimize_str(self, s):
+        if self.optimized:
+            return "# optimized: " + s
+        else:
+            return s
+
     def __str__(self):
+        if self.raw:
+            return self.optimize_str(self.raw)
+        if self.directive:
+            res = self.directive
+            res += "    "
+            res += ",".join(self.operands)
+            return self.optimize_str(res)
+        if self.label:
+            res = self.label
+            res += ":"
+            return self.optimize_str(res)
+
         res = self.opcode
         res += "    "
         for f in self.operands:
@@ -156,7 +212,7 @@ class RiscvInstruction:
                 print("error, the type of operand is wrong: ", f)
                 assert False
         res += ", ".join([op.to_riscv() for op in self.operands])
-        return res
+        return self.optimize_str(res)
 
 
 class X64Insruction:
@@ -218,6 +274,7 @@ class X64Insruction:
     def trans_pushq(self):
         sp = X64Operand(r"%rsp")
         imm = X64Operand(r"$8")
+        imm.imm = -imm.imm
         src = self.src(0)
         dest = X64Operand(r"0(%rsp)")
         return [
@@ -243,18 +300,23 @@ class X64Insruction:
         src = self.src(0)
         dest = self.dest()
         res = []
+
+        if src.type == "mem":
+            (reg, i) = src.load_mem()
+            res.append(i)
+            src = reg
+
         if carry:
-            # don't carry for add sub imm...
+            # don't carry for imm...
             if src.type != "imm":
                 carry_flag = X64Operand(r"%flag_carry")
-                res.append([RiscvInstruction("sltu", carry_flag, dest, src)])
+                res.append(RiscvInstruction("sltu", carry_flag, dest, src))
         if src.type == "reg" and dest.type == "reg":
             res.append(RiscvInstruction("sub", dest, dest, src))
         elif src.type == "imm" and dest.type == "reg":
             src.imm = 0 - src.imm
             res.append(RiscvInstruction("addi", dest, dest, src))
         elif src.type == "mem" and dest.type == "reg":
-            # TODO
             pass
         else:
             assert False
@@ -278,8 +340,14 @@ class X64Insruction:
             assert False
 
     def trans_call(self):
+        res = []
+        res.append(RiscvInstruction("auipc t1,0", raw=True))
+        # mimic x86, otherwise the stack offset is difficult to calculate in callee
+        res.append(RiscvInstruction("addi sp, sp, -8", raw=True))
+        res.append(RiscvInstruction("sd t1, 0(sp)", raw=True))
         dest = self.dest()  # it's a label
-        return RiscvInstruction("call", dest)
+        res.append(RiscvInstruction("call", dest))
+        return res
 
     def trans_leaq(self):
         src = self.src()
@@ -315,9 +383,13 @@ class X64Insruction:
             else:
                 assert False
         elif len(self.operands) == 2:
+            res = []
             dest = self.dest()
             if src.type == "mem" and dest.type == "reg":
-                return [RiscvInstruction("mul", dest, dest, src)]
+                (reg, i) = src.load_mem()
+                res.append(i)
+                res.append(RiscvInstruction("mul", dest, dest, reg))
+            return res
         else:
             assert False
 
@@ -441,8 +513,7 @@ class X64Insruction:
         elif src.type == "imm" and dest.type == "reg":
             if src.imm == 0:
                 if carry:
-                    res.append(
-                        [RiscvInstruction("sltu", carry_flag, dest, src)])
+                    res.append(RiscvInstruction("sltu", carry_flag, dest, src))
                 res.append(RiscvInstruction("sub", dest, dest, src))
             else:
                 assert False
@@ -450,20 +521,26 @@ class X64Insruction:
             assert False
         return res
 
-    # TODO: when to clear flags(e.g. carry, zero)?
-    # cmov rd, rs2, rs1, rs3
-    # uint_xlen_t cmov(uint_xlen_t rs1, uint_xlen_t rs2, uint_xlen_t rs3)
-    # {
-    #    return rs2 ? rs1: rs3
-    # }
+    #
+    # beq cl, zero, .LABLE
+    # add dest, src, zero
+    # .LABLE:
     def cmovcc(self, flag, cc=True):
         src = self.src()
         dest = self.dest()
         cl = X64Operand(flag)
+        zero = X64Operand(r"%reg_zero")
+        label = gen_label()
+        label_operand = X64Operand(label)
+
+        res = []
         if cc:
-            return [RiscvInstruction("cmov", dest, cl, src, dest)]
+            res.append(RiscvInstruction("beq", cl, zero, label_operand))
         else:
-            return [RiscvInstruction("cmov", dest, cl, dest, src)]
+            res.append(RiscvInstruction("bne", cl, zero, label_operand))
+        res.append(RiscvInstruction("add", dest, src, zero))
+        res.append(RiscvInstruction(f"{label}:", raw=True))
+        return res
 
     def trans_cmovcq(self):
         return self.cmovcc(r"%flag_carry")
@@ -660,15 +737,19 @@ def test(asm):
 
 
 def convert(asm, output_file):
-    output = open(output_file, "w")
-    output.write(".text\n")
-    for fields in asm:
+    instructions = []
+
+    def append_raw(code):
+        instructions.append(RiscvInstruction(code, raw=True))
+    append_raw(".text")
+    for index in range(0, len(asm)):
+        fields = asm[index]
         x64 = fields[0]
         x64 += "    "
         if len(fields) > 1:
             x64 += ", ".join(fields[1:])
 
-        output.write(f"# {x64}\n")
+        append_raw(f"# {x64}")
         if is_instruction(fields):
             x64 = X64Insruction(fields)
             riscv = []
@@ -679,27 +760,37 @@ def convert(asm, output_file):
             else:
                 riscv = riscv0
             for r in riscv:
-                assert r != None
-                output.write(str(r) + "\n")
+                assert isinstance(r, RiscvInstruction)
+                instructions.append(r)
         elif is_function(fields):
             fun_name = fields[0]
             if fun_name[-1] == ":":
                 fun_name = fun_name[0:-1]
-            output.write(f".globl {fun_name}\n.align 4\n{fun_name}:\n")
+            instructions.append(RiscvInstruction(".globl", fun_name, directive=True))
+            instructions.append(RiscvInstruction(".align", "4", directive=True))
+            instructions.append(RiscvInstruction(fun_name, label=True))
         elif is_special_directive(fields[0]):
+            # https://repzret.org/p/repzret/
             if len(fields) == 3 and fields[0] == ".byte" and fields[1].lower() == "0xf3" \
                     and fields[2].lower() == "0xc3":
-                output.write("ret\n")
+                # mimic x86
+                append_raw("addi sp, sp, 8")
+                instructions.append(RiscvInstruction("ret"))
             else:
-                output.write(f"# special directive: {fields} \n")
+                append_raw(f"# special directive: {fields}")
         elif is_label(fields):
-            output.write(f"# label: {fields} \n")
+            append_raw(f"# label: {fields}")
         elif is_call(fields):
-            output.write(f"# call: {fields} \n")
+            append_raw(f"# call: {fields}")
         elif is_function(fields):
-            output.write(f"# function: {fields} \n")
+            append_raw(f"# function: {fields}")
         else:
             assert False
+    output = open(output_file, "w")
+    for ins in instructions:
+        output.write(str(ins))
+        output.write("\n")
+    output.close()
 
 
 parser = argparse.ArgumentParser(
