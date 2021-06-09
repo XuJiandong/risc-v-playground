@@ -3,6 +3,7 @@
 import re
 import argparse
 import sys
+import os
 
 X64_TO_RISCV_REGS = {
     "rdi": "a0",
@@ -10,6 +11,8 @@ X64_TO_RISCV_REGS = {
     "rdx": "a2",
     "rcx": "a3",
     "r8": "a4",
+    "r9": "a5",
+
     # ra -
     "rax": "a0",
     "rsp": "sp",
@@ -22,27 +25,35 @@ X64_TO_RISCV_REGS = {
     "r13": "s3",
     "r14": "s4",
     "r15": "s5",
+
+    # pseudo x86 register names
+    "reg_zero": "zero",  # register zero, 0
+
     "flag_carry": "t2",  # carry
     "flag_zero": "t3",  # zero
     "flag_sign": "t4",  # sign
     "flag_overflow": "t5",  # overflow
+
+    "temp": "t6",
+    "temp2": "s6",
     # s6-s11	-
 }
 
-RISCV_TEMP_REG = "t6"
-RISCV_TEMP_REG2 = "s6"
 
 # make sure values are not duplicated
-
-
 def check_sanity(mapping):
     map2 = {}
     for key in mapping:
         value = mapping[key]
         if value in map2:
-            assert False
+            if value != "a0":
+                print(f"{value} is duplicated.")
+                assert False
         else:
             map2[value] = 1
+
+
+check_sanity(X64_TO_RISCV_REGS)
 
 
 def get_reverse_mapping(mapping):
@@ -61,53 +72,91 @@ def trans_operand(operand):
     return X64_TO_RISCV_REGS[name]
 
 
+def T(operand):
+    return trans_operand(operand)
+
+
+# internal format of X64Operand is always X64
 class X64Operand:
     REG = re.compile(r'%(\w+)')
-    MEM = re.compile(r'([\d-]+)\(%\w+\)')
-    IMM = re.compiler(r'\$(\w+)')
+    MEM = re.compile(r'([\d-]+)\((%\w+)\)')
+    IMM = re.compile(r'\$(\w+)')
+    LBL = re.compile(r'([0-9a-zA-Z_\.]+)')
 
+    # field is with AT&T x86 format
     def __init__(self, field):
         reg = X64Operand.REG.match(field)
         if reg:
             self.type = "reg"
-            self.reg = trans_operand(field)
-        else:
-            match = X64Operand.REG.match(field)
-            if match:
-                imm = match.group(1)
-                reg = match.group(2)
-                self.type = "mem"
-                self.reg = trans_operand(reg)
-                self.imm = int(imm)
-            else:
-                match = X64Operand.IMM.match(field)
-                if match:
-                    imm = match.group(1)
-                    self.type = "imm"
-                    self.reg = None
-                    self.imm = int(imm)
-                else:
-                    assert False
+            self.reg = field
+            return
+        match = X64Operand.MEM.match(field)
+        if match:
+            imm = match.group(1)
+            reg = match.group(2)
+            self.type = "mem"
+            self.reg = reg
+            self.imm = int(imm)
+            return
+        match = X64Operand.IMM.match(field)
+        if match:
+            imm = match.group(1)
+            self.type = "imm"
+            self.reg = None
+            self.imm = int(imm)
+            return
+        match = X64Operand.LBL.match(field)
+        if match:
+            self.type = "label"
+            self.reg = None
+            self.imm = 0
+            self.label = match.group(1)
+            return
 
-    def __str__(self):
+        assert False
+
+    def to_riscv(self):
         if self.type == "reg":
-            return self.reg
+            return trans_operand(self.reg)
         elif self.type == "mem":
-            return f"{self.imm}({self.reg})"
+            return f"{self.imm}({trans_operand(self.reg)})"
         elif self.type == "imm":
             return f"{self.imm}"
+        elif self.type == "label":
+            return f"{self.label}"
+        else:
+            assert False
+
+    def load_mem(self):
+        global RISCV_TEMP_REG
+        assert self.type == "mem"
+        r = RISCV_TEMP_REG
+        i = RiscvInstruction("ld", r, self)
+        return (r, i)
 
 
-check_sanity(X64_TO_RISCV_REGS)
+RISCV_TEMP_REG = X64Operand("%temp")
+RISCV_TEMP_REG2 = X64Operand("%temp2")
 
 
 class RiscvInstruction:
-    def __init__(self, opcode, *operands):
+    def __init__(self, opcode, *x64_operands):
         self.opcode = opcode
-        self.operands = list(operands)
+        self.operands = list(x64_operands)
+        for i in self.operands:
+            if not isinstance(i, X64Operand):
+                print("the operand is not with wrong type", i)
+                assert False
 
     def __str__(self):
-        self.opcode + " " + self.fields.join(' ')
+        res = self.opcode
+        res += "    "
+        for f in self.operands:
+            if not isinstance(f, X64Operand):
+                print("error, the type of operand is wrong: ", f)
+                assert False
+        res += ", ".join([op.to_riscv() for op in self.operands])
+        return res
 
 
 class X64Insruction:
@@ -119,10 +168,10 @@ class X64Insruction:
         return True
 
     def dest(self):
-        return self.operands[-1]
+        return X64Operand(self.operands[-1])
 
     def src(self, index=0):
-        return self.operands[index]
+        return X64Operand(self.operands[index])
 
     def translate(self):
         if self.opcode == "pushq":
@@ -130,7 +179,7 @@ class X64Insruction:
         elif self.opcode == "popq":
             return self.trans_popq()
         elif self.opcode == "subq":
-            return self.trans_subq()
+            return self.trans_subq(True)
         elif self.opcode == "movq":
             return self.trans_movq()
         elif self.opcode == "call":
@@ -142,13 +191,13 @@ class X64Insruction:
         elif self.opcode == "imulq":
             return self.trans_imulq()
         elif self.opcode == "addq":
-            return self.trans_addq()
+            return self.trans_addq(True)
         elif self.opcode == "adcq":
-            return self.trans_adcq()
+            return self.trans_adcq(True)
         elif self.opcode == "xorq":
             return self.trans_xorq()
         elif self.opcode == "sbbq":
-            return self.trans_sbbq()
+            return self.trans_sbbq(True)
         elif self.opcode == "cmovcq":
             return self.trans_cmovcq()
         elif self.opcode == "andq":
@@ -167,55 +216,78 @@ class X64Insruction:
             assert False
 
     def trans_pushq(self):
-        src = trans_operand(self.src(0))
+        sp = X64Operand(r"%rsp")
+        imm = X64Operand(r"$8")
+        src = self.src(0)
+        dest = X64Operand(r"0(%rsp)")
         return [
-            RiscvInstruction("addi", "sp", "8"),
-            RiscvInstruction("sd", src, "0(sp)")
+            RiscvInstruction("addi", sp, sp, imm),
+            RiscvInstruction("sd", src, dest)
         ]
 
     def trans_popq(self):
-        dest = trans_operand(self.src(0))
+        sp = X64Operand(r"%rsp")
+        imm = X64Operand(r"$8")
+        src = self.src(0)
+        dest = X64Operand(r"0(%rsp)")
         return [
-            RiscvInstruction("ld", dest, "0(sp)"),
-            RiscvInstruction("addi", "sp", "8")
+            RiscvInstruction("ld", src, dest),
+            RiscvInstruction("addi", sp, sp, imm)
         ]
 
-    # TODO: carry
     # The SUB instruction performs integer subtraction.
     # It evaluates the result for both signed and unsigned integer
     # operands and sets the OF and CF flags to indicate an overflow
     # in the signed or unsigned result, respectively.
     def trans_subq(self, carry=False):
-        src = trans_operand(self.src(0))
-        dest = trans_operand(self.dest())
+        src = self.src(0)
+        dest = self.dest()
         res = []
         if carry:
-            carry_flag = trans_operand("flag_carry")
-            res.append([RiscvInstruction("sltu", carry_flag, dest, src)])
-        res.append(RiscvInstruction("sub", dest, dest, src))
+            # don't carry for add sub imm...
+            if src.type != "imm":
+                carry_flag = X64Operand(r"%flag_carry")
+                res.append([RiscvInstruction("sltu", carry_flag, dest, src)])
+        if src.type == "reg" and dest.type == "reg":
+            res.append(RiscvInstruction("sub", dest, dest, src))
+        elif src.type == "imm" and dest.type == "reg":
+            src.imm = 0 - src.imm
+            res.append(RiscvInstruction("addi", dest, dest, src))
+        elif src.type == "mem" and dest.type == "reg":
+            # TODO
+            pass
+        else:
+            assert False
         return res
 
     def trans_movq(self):
-        src = str(X64Operand(self.src()))
-        dest = str(X64Operand(self.dest()))
+        src = self.src()
+        dest = self.dest()
+        zero = X64Operand(r"%reg_zero")
         if src.type == "reg" and dest.type == "reg":
-            return RiscvInstruction("add", dest, src, "zero")
+            return RiscvInstruction("add", dest, src, zero)
         elif src.type == "reg" and dest.type == "mem":
-            return RiscvInstruction("sd", dest, src)
+            # SD rs2,offset(rs1)
+            # u64[rs1 + offset] ← rs2
+            # memory operand is always at the end
+            return RiscvInstruction("sd", src, dest)
         elif src.type == "mem" and dest.type == "reg":
             return RiscvInstruction("ld", dest, src)
         else:
+            print(src.type, dest.type)
             assert False
 
     def trans_call(self):
-        dest = self.operands[0]  # it's a label
+        dest = self.dest()  # it's a label
         return RiscvInstruction("call", dest)
 
     def trans_leaq(self):
-        src = X64Operand(self.src())
-        dest = X64Operand(self.dest())
-        if dest.type == "reg" and dest.src == "mem":
-            return RiscvInstruction("addi", dest, src.reg, src.imm)
+        src = self.src()
+        dest = self.dest()
+        if dest.type == "reg" and src.type == "mem":
+            reg = X64Operand(src.reg)
+            imm = X64Operand("$" + str(src.imm))
+            return RiscvInstruction("addi", dest, reg, imm)
         else:
             assert False
 
@@ -224,49 +296,52 @@ class X64Insruction:
         mul_opcode = "mulhu"
         if signed:
             mul_opcode = "mulh"
-        src = X64Operand(self.src())
-        assert len(self.operands) == 1
-        if src.type == "mem":
-            src2 = trans_operand(r'%rax')
-            dest_h = trans_operand(r'%rdx')
-            dest_l = trans_operand(r'%rax')
-            [RiscvInstruction("ld", RISCV_TEMP_REG, src),
-             RiscvInstruction(mul_opcode, dest_h, RISCV_TEMP_REG, src2),
-             RiscvInstruction("mul", dest_l, RISCV_TEMP_REG, src2)]
-        elif src.type == "reg":
-            src2 = trans_operand(r'%rax')
-            dest_h = trans_operand(r'%rdx')
-            dest_l = trans_operand(r'%rax')
-            [RiscvInstruction(mul_opcode, dest_h, src, src2),
-             RiscvInstruction("mul", dest_l, src, src2)]
+        src = self.src()
+        if len(self.operands) == 1:
+            if src.type == "mem":
+                src2 = X64Operand(r'%rax')
+                dest_h = X64Operand(r'%rdx')
+                dest_l = X64Operand(r'%rax')
+                return [RiscvInstruction("ld", RISCV_TEMP_REG, src),
+                        RiscvInstruction(mul_opcode, dest_h,
+                                         RISCV_TEMP_REG, src2),
+                        RiscvInstruction("mul", dest_l, RISCV_TEMP_REG, src2)]
+            elif src.type == "reg":
+                src2 = X64Operand(r'%rax')
+                dest_h = X64Operand(r'%rdx')
+                dest_l = X64Operand(r'%rax')
+                return [RiscvInstruction(mul_opcode, dest_h, src, src2),
+                        RiscvInstruction("mul", dest_l, src, src2)]
+            else:
+                assert False
+        elif len(self.operands) == 2:
+            dest = self.dest()
+            if src.type == "mem" and dest.type == "reg":
+                return [RiscvInstruction("mul", dest, dest, src)]
         else:
             assert False
 
     def trans_imulq(self):
         return self.trans_mulq(True)
 
-    # TODO: detect if need to set "carry" on
-    # if there is any "adc" after "add", should append the "sltu" instruction:
-    # add a0, a1, a2
-    # sltu a3, a0, a1
+    # src -> dest
+    # 1. imm -> dest
+    # 2. reg -> reg
+    # 3. mem -> reg
+    #
+    # when to set carry to True?
+    # 1. adc after that
+    # 2.
     def trans_addq(self, carry=False):
-        src = X64Operand(self.src())
-        dest = X64Operand(self.dest())
-        flag_carry = trans_operand("flag_carry")
+        src = self.src()
+        dest = self.dest()
+        flag_carry = X64Operand(r'%flag_carry')
         assert len(self.operands) == 2
         res = []
         if src.type == "reg" and dest.type == "reg":
             res = [RiscvInstruction("add", dest, dest, src)]
             if carry:
                 res.append(RiscvInstruction("sltu", flag_carry, dest, src))
-        elif src.type == "reg" and dest.type == "mem":
-            res = [RiscvInstruction("ld", RISCV_TEMP_REG, dest),
-                   RiscvInstruction("add", RISCV_TEMP_REG,
-                                    RISCV_TEMP_REG, src),
-                   RiscvInstruction("sd", RISCV_TEMP_REG, dest)]
-            if carry:
-                res.append(RiscvInstruction(
-                    "sltu", flag_carry, RISCV_TEMP_REG, src))
         elif src.type == "mem" and dest.type == "reg":
             res = [RiscvInstruction("ld", RISCV_TEMP_REG, src),
                    RiscvInstruction("add", dest,
@@ -274,45 +349,105 @@ class X64Insruction:
             if carry:
                 res.append(RiscvInstruction(
                     "sltu", flag_carry, dest, RISCV_TEMP_REG))
+        elif src.type == "imm" and dest.type == "reg":
+            pass
         else:
             assert False
         return res
 
-    def trans_adcq(self, carry=False):
-        src = trans_operand(self.src())
-        dest = trans_operand(self.dest())
-        carry_flag = trans_operand("flag_carry")
-        res = [RiscvInstruction("add", RISCV_TEMP_REG, carry_flag, src)]
-        # considering src + carry_flag = 0 (with carry)
-        if carry:
-            res.append(RiscvInstruction("sltu", carry_flag, RISCV_TEMP_REG, src))
-        res.append(RiscvInstruction("add", dest, dest, RISCV_TEMP_REG))
-        if carry:
-            res.append(RiscvInstruction(
-                "sltu", carry_flag, dest, RISCV_TEMP_REG))
+    # 1. imm(0), reg
+    # 2. reg, reg
+    # 3. mem, reg
+
+    # Thus, adding src, dest, and flag_carry with results in dest and carry-out in carry_flag:
+    # add dest, dest, flag_carry
+    # sltu carry_flag, a0, a1
+    # add dest, dest, src
+    # sltu carry_flag2, a0, a2
+    # add carry_flag, carry_flag2, carry_flag
+    def trans_adcq(self, carry=True):
+        src = self.src(0)
+        dest = self.dest()
+
+        carry_flag = X64Operand(r"%flag_carry")
+        carry_flag2 = RISCV_TEMP_REG2
+        res = []
+
+        def f(src, dest):
+            res.append(RiscvInstruction("add", dest, dest, carry_flag))
+            if carry:
+                res.append(RiscvInstruction(
+                    "sltu", carry_flag2, dest, carry_flag))
+            res.append(RiscvInstruction("add", dest, dest, src))
+            if carry:
+                res.append(RiscvInstruction(
+                    "sltu", carry_flag, dest, src))
+                res.append(RiscvInstruction(
+                    "add", carry_flag, carry_flag, carry_flag2))
+        if src.type == "reg" and dest.type == "reg":
+            f(self.src(0), self.dest())
+        elif src.type == "imm" and dest.type == "reg":
+            res = []
+            if src.imm == 0:
+                res.append(RiscvInstruction("add", dest, carry_flag, dest))
+            else:
+                assert False
+        elif src.type == "mem" and dest.type == "reg":
+            (reg, i) = src.load_mem()
+            res.append(i)
+            f(reg, dest)
+        return res
 
     def trans_xorq(self):
         assert len(self.operands) == 2
-        assert self.src() == self.dest()
-        operand = trans_operand(self.operands[0])
-        return RiscvInstruction("xor", operand, operand, operand)
+        src = self.src()
+        dest = self.dest()
+        assert src.type == dest.type
+        assert src.type == "reg" and src.reg == dest.reg
+        return RiscvInstruction("xor", dest, dest, src)
 
-    # DEST ← (DEST – (SRC + CF));
-    # The SBB instruction does not distinguish between signed or unsigned operands.
-    # Instead, the processor evaluates the result for both data types and sets the
-    # OF and CF flags to indicate a borrow in the signed or unsigned result, respectively.
-    # The SF flag indicates the sign of the signed result.
-    def trans_sbbq(self, carry=False):
-        dest = trans_operand(self.dest())
-        src = trans_operand(self.src())
-        carry_flag = trans_operand("flag_carry")
-        res = [RiscvInstruction("add", RISCV_TEMP_REG, src, carry_flag)]
-        # TODO: check carry flag: src + carry_flag = 0 with carry
-        # require testing
-        if carry:
-            res.append(RiscvInstruction(
-                "sltu", carry_flag, dest, RISCV_TEMP_REG))
-        res.append(RiscvInstruction("sub", dest, dest, RISCV_TEMP_REG))
+    # src -> dest
+    # 1. imm -> reg
+    # 2. reg -> reg
+    # 3. mem -> reg
+    # DEST ← (DEST – SRC - CF);
+
+    def trans_sbbq(self, carry=True):
+        dest = self.dest()
+        src = self.src()
+        carry_flag = X64Operand(r"%flag_carry")
+        carry_flag2 = X64Operand(r"%temp2")
+        res = []
+
+        def f(src, dest):
+            if carry:
+                res.append(RiscvInstruction(
+                    "sltu", carry_flag2, dest, carry_flag))
+            res.append(RiscvInstruction("sub", dest, dest, carry_flag))
+            if carry:
+                res.append(RiscvInstruction(
+                    "sltu", carry_flag, dest, src))
+            res.append(RiscvInstruction("sub", dest, dest, src))
+            if carry:
+                res.append(RiscvInstruction(
+                    "add", carry_flag, carry_flag, carry_flag2))
+
+        if src.type == "reg" and dest.type == "reg":
+            f(src, dest)
+        elif src.type == "mem" and dest.type == "reg":
+            (reg, i) = src.load_mem()
+            res.append(i)
+            f(reg, dest)
+        elif src.type == "imm" and dest.type == "reg":
+            if src.imm == 0:
+                if carry:
+                    res.append(
+                        [RiscvInstruction("sltu", carry_flag, dest, src)])
+                res.append(RiscvInstruction("sub", dest, dest, src))
+            else:
+                assert False
+        else:
+            assert False
         return res
 
     # TODO: when to clear flags(e.g. carry, zero)?
@@ -322,16 +457,16 @@ class X64Insruction:
     #    return rs2 ? rs1: rs3
     # }
     def cmovcc(self, flag, cc=True):
-        src = trans_operand(self.src())
-        dest = trans_operand(self.dest())
-        cl = trans_operand(flag)
+        src = self.src()
+        dest = self.dest()
+        cl = X64Operand(flag)
         if cc:
             return [RiscvInstruction("cmov", dest, cl, src, dest)]
         else:
             return [RiscvInstruction("cmov", dest, cl, dest, src)]
 
     def trans_cmovcq(self):
-        return self.cmovcc("flag_carry")
+        return self.cmovcc(r"%flag_carry")
 
     def trans_andq(self):
         src = trans_operand(self.src())
@@ -452,7 +587,8 @@ def parse(input):
         if line[-1] == ":":
             asm.append([line])
         elif is_special_directive(line):
-            asm.append([line])
+            fields = re.split(r'[,\s]+', line)
+            asm.append(fields)
         else:
             if line[0] != ".":
                 fields = re.split(r'[,\s]+', line)
@@ -523,12 +659,57 @@ def test(asm):
     return True
 
 
+def convert(asm, output_file):
+    output = open(output_file, "w")
+    output.write(".text\n")
+    for fields in asm:
+        x64 = fields[0]
+        x64 += "    "
+        if len(fields) > 1:
+            x64 += ", ".join(fields[1:])
+
+        output.write(f"# {x64}\n")
+        if is_instruction(fields):
+            x64 = X64Insruction(fields)
+            riscv = []
+
+            riscv0 = x64.translate()
+            if not isinstance(riscv0, list):
+                riscv.append(riscv0)
+            else:
+                riscv = riscv0
+            for r in riscv:
+                assert r != None
+                output.write(str(r) + "\n")
+        elif is_function(fields):
+            fun_name = fields[0]
+            if fun_name[-1] == ":":
+                fun_name = fun_name[0:-1]
+            output.write(f".globl {fun_name}\n.align 4\n{fun_name}:\n")
+        elif is_special_directive(fields[0]):
+            if len(fields) == 3 and fields[0] == ".byte" and fields[1].lower() == "0xf3" \
+                    and fields[2].lower() == "0xc3":
+                output.write("ret\n")
+            else:
+                output.write(f"# special directive: {fields} \n")
+        elif is_label(fields):
+            output.write(f"# label: {fields} \n")
+        elif is_call(fields):
+            output.write(f"# call: {fields} \n")
+        elif is_function(fields):
+            output.write(f"# function: {fields} \n")
+        else:
+            assert False
+
+
 parser = argparse.ArgumentParser(
     description="Tools about x86-64 and RISC-V assembly code")
 parser.add_argument('-s', '--statistics', dest='statistics',
                     action='store_true', help="print statistics")
 parser.add_argument('-f', '--file', dest='file', type=str,
                     help="specify input file. default: stdin")
+parser.add_argument('-c', '--convert', dest='convert', action='store_true',
+                    help="convert x86-64 assembly to RISC-V")
 parser.add_argument('-d', '--dump', dest='dump', action='store_true',
                     help="dump x86-64 assembly, remove directives")
 parser.add_argument('-t', '--test', dest='test', action='store_true',
@@ -540,6 +721,10 @@ if args.file:
     input = open(args.file, "r")
 
 asm = parse(input)
+
+if args.convert:
+    ret = convert(asm, args.file + ".riscv.S")
+    sys.exit(ret)
 
 if args.statistics:
     dump_statistic(asm)

@@ -28,7 +28,7 @@ LDFLAGS := -Wl,-static -Wl,--gc-sections
 CLANG-LDLAGS=$(subst -Wl,--gc-sections,,$(LDFLAGS))
 
 X64_CC := clang
-X64_CFLAGS := -fPIC -O1
+X64_CFLAGS := -fPIC -g
 X64_LDFLAGS :=
 
 
