@@ -82,17 +82,20 @@ build/ll_u256_mont-riscv64.o: c/ll_u256_mont-riscv64.S
 build/mul_mont_384.o: c/mul_mont_384.S
 	$(CC) -c -DCKB_DECLARATION_ONLY $(CFLAGS) -o $@ $<
 
+build/blst_mul_mont_384.o: x86-64/mul_mont_384.S.riscv.S
+	$(CC) -c -DCKB_DECLARATION_ONLY $(CFLAGS) -o $@ $<
+
 build/mul_mont_384_s.o: c/mul_mont_384_s.S
 	$(CC) -c -DCKB_DECLARATION_ONLY $(CFLAGS) -o $@ $<
 
 build/mont.o: c/mont.c
 	$(CC) -c $(CFLAGS) -o $@ $<
 
-build/mont: build/ll_u256_mont-riscv64.o build/mul_mont_384.o build/mont.o
+build/mont: build/ll_u256_mont-riscv64.o build/mul_mont_384.o build/mont.o build/blst_mul_mont_384.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
 	$(CC) -S $(CFLAGS) -o build/mont.S c/mont.c
 
-build/mont_s: build/ll_u256_mont-riscv64.o build/mul_mont_384_s.o build/mont.o
+build/mont_s: build/ll_u256_mont-riscv64.o build/mul_mont_384_s.o build/mont.o build/blst_mul_mont_384.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
 
 ### convert mul_mont_384_c_ref.c into asm version

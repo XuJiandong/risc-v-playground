@@ -1,8 +1,8 @@
-.globl	mul_mont_384x
-.hidden	mul_mont_384x
-.type	mul_mont_384x,@function
+.globl	blst_mul_mont_384x
+.hidden	blst_mul_mont_384x
+.type	blst_mul_mont_384x,@function
 .align	32
-mul_mont_384x:
+blst_mul_mont_384x:
 	.byte	0xf3,0x0f,0x1e,0xfa
 
 	pushq	%rbp
@@ -21,42 +21,42 @@ mul_mont_384x:
 	movq	%r8,0(%rsp)
 
 	leaq	40(%rsp),%rdi
-	call	__mulq_384
+	call	__blst_mulq_384
 
 	leaq	48(%rbx),%rbx
 	leaq	48(%rsi),%rsi
 	leaq	40+96(%rsp),%rdi
-	call	__mulq_384
+	call	__blst_mulq_384
 
 	movq	8(%rsp),%rcx
 	leaq	-48(%rsi),%rdx
 	leaq	40+192+48(%rsp),%rdi
-	call	__add_mod_384
+	call	__blst_add_mod_384
 
 	movq	16(%rsp),%rsi
 	leaq	48(%rsi),%rdx
 	leaq	-48(%rdi),%rdi
-	call	__add_mod_384
+	call	__blst_add_mod_384
 
 	leaq	(%rdi),%rbx
 	leaq	48(%rdi),%rsi
-	call	__mulq_384
+	call	__blst_mulq_384
 
 
 	leaq	(%rdi),%rsi
 	leaq	40(%rsp),%rdx
 	movq	8(%rsp),%rcx
-	call	__sub_mod_384x384
+	call	__blst_sub_mod_384x384
 
 	leaq	(%rdi),%rsi
 	leaq	-96(%rdi),%rdx
-	call	__sub_mod_384x384
+	call	__blst_sub_mod_384x384
 
 
 	leaq	40(%rsp),%rsi
 	leaq	40+96(%rsp),%rdx
 	leaq	40(%rsp),%rdi
-	call	__sub_mod_384x384
+	call	__blst_sub_mod_384x384
 
 	movq	%rcx,%rbx
 
@@ -64,15 +64,15 @@ mul_mont_384x:
 	leaq	40(%rsp),%rsi
 	movq	0(%rsp),%rcx
 	movq	32(%rsp),%rdi
-	call	__mulq_by_1_mont_384
-	call	__redc_tail_mont_384
+	call	__blst_mulq_by_1_mont_384
+	call	__blst_redc_tail_mont_384
 
 
 	leaq	40+192(%rsp),%rsi
 	movq	0(%rsp),%rcx
 	leaq	48(%rdi),%rdi
-	call	__mulq_by_1_mont_384
-	call	__redc_tail_mont_384
+	call	__blst_mulq_by_1_mont_384
+	call	__blst_redc_tail_mont_384
 
 	leaq	328(%rsp),%r8
 	movq	0(%r8),%r15
@@ -85,7 +85,7 @@ mul_mont_384x:
 	.byte	0xf3,0xc3
 
 
-__mulq_384:
+__blst_mulq_384:
 	movq	0(%rbx),%rax
 
 	movq	%rax,%rbp
@@ -366,9 +366,9 @@ __mulq_384:
 	movq	%r12,88(%rdi)
 	.byte	0xf3,0xc3
 
-.type	__add_mod_384,@function
+.type	__blst_add_mod_384,@function
 .align	32
-__add_mod_384:
+__blst_add_mod_384:
 	movq	0(%rsi),%r8
 	movq	8(%rsi),%r9
 	movq	16(%rsi),%r10
@@ -414,9 +414,9 @@ __add_mod_384:
 	.byte	0xf3,0xc3
 
 
-.type	__sub_mod_384x384,@function
+.type	__blst_sub_mod_384x384,@function
 .align	32
-__sub_mod_384x384:
+__blst_sub_mod_384x384:
 	.byte	0xf3,0x0f,0x1e,0xfa
 
 	movq	0(%rsi),%r8
@@ -482,9 +482,9 @@ __sub_mod_384x384:
 
 
 .size	from_mont_384,.-from_mont_384
-.type	__mulq_by_1_mont_384,@function
+.type	__blst_mulq_by_1_mont_384,@function
 .align	32
-__mulq_by_1_mont_384:
+__blst_mulq_by_1_mont_384:
 .cfi_startproc
 	.byte	0xf3,0x0f,0x1e,0xfa
 
@@ -780,9 +780,9 @@ __mulq_by_1_mont_384:
 	movq	%rdx,%r11
 	.byte	0xf3,0xc3
 
-.type	__sub_mod_384x384,@function
+.type	__blst_sub_mod_384x384,@function
 .align	32
-__sub_mod_384x384:
+__blst_sub_mod_384x384:
 	.byte	0xf3,0x0f,0x1e,0xfa
 
 	movq	0(%rsi),%r8
@@ -847,9 +847,9 @@ __sub_mod_384x384:
 	.byte	0xf3,0xc3
 
 
-.type	__redc_tail_mont_384,@function
+.type	__blst_redc_tail_mont_384,@function
 .align	32
-__redc_tail_mont_384:
+__blst_redc_tail_mont_384:
 	.byte	0xf3,0x0f,0x1e,0xfa
 
 	addq	48(%rsi),%r14
@@ -890,9 +890,9 @@ __redc_tail_mont_384:
 
 	.byte	0xf3,0xc3
 
-.type	__redc_tail_mont_384,@function
+.type	__blst_redc_tail_mont_384,@function
 .align	32
-__redc_tail_mont_384:
+__blst_redc_tail_mont_384:
 	.byte	0xf3,0x0f,0x1e,0xfa
 
 	addq	48(%rsi),%r14

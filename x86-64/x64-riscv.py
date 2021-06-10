@@ -186,6 +186,9 @@ class RiscvInstruction:
     def optimize(self):
         self.optimized = True
 
+    def is_opcode(self):
+        return self.opcode
+
     def optimize_str(self, s):
         if self.optimized:
             return "# optimized: " + s
@@ -489,6 +492,8 @@ class X64Insruction:
         src = self.src()
         carry_flag = X64Operand(r"%flag_carry")
         carry_flag2 = X64Operand(r"%temp2")
+        zero = X64Operand(r"%reg_zero")
+
         res = []
 
         def f(src, dest):
@@ -512,9 +517,11 @@ class X64Insruction:
             f(reg, dest)
         elif src.type == "imm" and dest.type == "reg":
             if src.imm == 0:
-                if carry:
-                    res.append(RiscvInstruction("sltu", carry_flag, dest, src))
-                res.append(RiscvInstruction("sub", dest, dest, src))
+                res.append(RiscvInstruction(
+                    "sltu", carry_flag2, dest, carry_flag))
+                res.append(RiscvInstruction("sub", dest, dest, carry_flag))
+                res.append(RiscvInstruction(
+                    "add", carry_flag, carry_flag2, zero))
             else:
                 assert False
         else:
@@ -605,13 +612,24 @@ riscv_cost_model = {
     "movd": 1,
     "decl": 1,
     "jnz": 3,  # beq
+    "sd": 2,
+    "add": 1,
+    "ret": 3,
+    "beq": 3,
+    "sltu": 1,
+    "sub": 1,
+    "ld": 2,
+    "mul": 5,
+    "mulhu": 5,
+    "xor": 1,
+    "addi": 1,
 }
 
 
 def cost(opcode):
     global riscv_cost_model
     if opcode not in riscv_cost_model:
-        print(f"warning, {opcode} is without cost.")
+        print(f"warning, {opcode} is without cost, use 1")
         return 1
     else:
         return riscv_cost_model[opcode]
@@ -766,8 +784,10 @@ def convert(asm, output_file):
             fun_name = fields[0]
             if fun_name[-1] == ":":
                 fun_name = fun_name[0:-1]
-            instructions.append(RiscvInstruction(".globl", fun_name, directive=True))
-            instructions.append(RiscvInstruction(".align", "4", directive=True))
+            instructions.append(RiscvInstruction(
+                ".globl", fun_name, directive=True))
+            instructions.append(RiscvInstruction(
+                ".align", "4", directive=True))
             instructions.append(RiscvInstruction(fun_name, label=True))
         elif is_special_directive(fields[0]):
             # https://repzret.org/p/repzret/
@@ -786,11 +806,20 @@ def convert(asm, output_file):
             append_raw(f"# function: {fields}")
         else:
             assert False
+    total_opcode = 0
+    total_cycles = 0
     output = open(output_file, "w")
     for ins in instructions:
         output.write(str(ins))
         output.write("\n")
+        if ins.is_opcode():
+            total_opcode += 1
+            total_cycles += cost(ins.opcode)
+
     output.close()
+
+    print(f"done, about {total_opcode} instructions generated!")
+    print(f"estimated cycles: {total_cycles}.")
 
 
 parser = argparse.ArgumentParser(

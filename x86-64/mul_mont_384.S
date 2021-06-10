@@ -1,7 +1,7 @@
-.globl    mul_mont_384
-.type    mul_mont_384,@function
+.globl    blst_mul_mont_384
+.type    blst_mul_mont_384,@function
 .align    32
-mul_mont_384:
+blst_mul_mont_384:
     .byte    0xf3,0x0f,0x1e,0xfa
     pushq    %rbp
     pushq    %rbx
@@ -20,7 +20,7 @@ mul_mont_384:
     movq    %r8,0(%rsp)
     movq    %rdi,8(%rsp)
 
-    call    __mulq_mont_384
+    call    __blst_mulq_mont_384
 
     movq    24(%rsp),%r15
     movq    32(%rsp),%r14
@@ -32,9 +32,9 @@ mul_mont_384:
     .byte    0xf3,0xc3
 
 
-.type    __mulq_mont_384,@function
+.type    __blst_mulq_mont_384,@function
 .align    32
-__mulq_mont_384:
+__blst_mulq_mont_384:
     .byte    0xf3,0x0f,0x1e,0xfa
     movq    %rax,%rdi
     mulq    %r14

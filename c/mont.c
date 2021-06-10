@@ -99,6 +99,8 @@ bool check_result(uint64_t* result, uint64_t* expected, size_t len) {
 
 // asm version
 __attribute__ ((noinline)) void mul_mont_384(limb_t ret[], const limb_t a[], const limb_t b[], const limb_t p[], limb_t n0);
+__attribute__((noinline)) void blst_mul_mont_384(limb_t ret[], const limb_t a[], const limb_t b[], const limb_t p[], limb_t n0);
+
 __attribute__ ((noinline)) void ll_u256_mont_mul(uint64_t rd[4], const uint64_t ad[4],
                       const uint64_t bd[4], const uint64_t Nd[4], uint64_t k0);
 
@@ -137,6 +139,7 @@ int verify_384(void) {
   uint64_t k = ll_invert_limb(N[0]);
   mul_mont_n(result, a, b, N, k, 6);
 
+  printf("mul_mont_384 starts\n");
   uint64_t result2[6] = {0};
   mul_mont_384(result2, a, b, N, k);
   for (int i = 0; i < 6; i++) {
@@ -144,7 +147,19 @@ int verify_384(void) {
       printf("failed, wrong result at index %d: %lld(correct) vs %lld(wrong)\n", i, result[i], result2[2]);
     }
   }
-  printf("done\n");
+  printf("mul_mont_384 done\n");
+
+  printf("blst_mul_mont_384 starts\n");
+  blst_mul_mont_384(result2, a, b, N, k);
+  for (int i = 0; i < 6; i++)
+  {
+    if (result[i] != result2[i])
+    {
+      printf("failed, wrong result at index %d: %lld(correct) vs %lld(wrong)\n", i, result[i], result2[2]);
+    }
+  }
+  printf("blst_mul_mont_384 done\n");
+
   return 0;
 }
 
