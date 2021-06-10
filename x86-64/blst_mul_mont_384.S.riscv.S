@@ -5,22 +5,11 @@
 .globl    blst_mul_mont_384
 .align    4
 blst_mul_mont_384:
+addi sp, sp, -8
+sd ra, 0(sp)
 # .byte    0xf3, 0x0f, 0x1e, 0xfa
 # special directive: ['.byte', '0xf3', '0x0f', '0x1e', '0xfa']
 # pushq    %rbp
-mul zero, zero, zero
-mul zero, zero, zero
-mul zero, zero, zero
-mul zero, zero, zero
-mul zero, zero, zero
-mul zero, zero, zero
-mul zero, zero, zero
-mul zero, zero, zero
-mul zero, zero, zero
-
-addi sp, sp, -8
-sd ra, 0(sp)
-
 addi    sp, sp, -8
 sd    fp, 0(sp)
 # pushq    %rbx
@@ -57,7 +46,6 @@ sd    a4, 0(sp)
 # movq    %rdi, 8(%rsp)
 sd    a0, 8(sp)
 # call    __blst_mulq_mont_384
-
 auipc t1,0
 addi sp, sp, -8
 sd t1, 0(sp)
@@ -76,24 +64,10 @@ ld    s1, 56(sp)
 ld    fp, 64(sp)
 # leaq    72(%rsp), %rsp
 addi    sp, sp, 72
-
+# .byte    0xf3, 0xc3
 ld ra, 0(sp)
 addi sp, sp, 8
-
-mul zero, zero, zero
-mul zero, zero, zero
-mul zero, zero, zero
-mul zero, zero, zero
-mul zero, zero, zero
-mul zero, zero, zero
-mul zero, zero, zero
-mul zero, zero, zero
-mul zero, zero, zero
-
-
-# .byte    0xf3, 0xc3
 ret    
-
 # __blst_mulq_mont_384:    
 .globl    __blst_mulq_mont_384
 .align    4

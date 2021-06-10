@@ -756,6 +756,7 @@ def test(asm):
 
 def convert(asm, output_file):
     instructions = []
+    is_exported_function = True
 
     def append_raw(code):
         instructions.append(RiscvInstruction(code, raw=True))
@@ -789,12 +790,30 @@ def convert(asm, output_file):
             instructions.append(RiscvInstruction(
                 ".align", "4", directive=True))
             instructions.append(RiscvInstruction(fun_name, label=True))
+
+
+            if is_exported_function:
+                instructions.append(RiscvInstruction("addi sp, sp, -8", raw=True))
+                instructions.append(RiscvInstruction("sd ra, 0(sp)", raw=True))
+
         elif is_special_directive(fields[0]):
             # https://repzret.org/p/repzret/
             if len(fields) == 3 and fields[0] == ".byte" and fields[1].lower() == "0xf3" \
                     and fields[2].lower() == "0xc3":
-                # mimic x86
-                append_raw("addi sp, sp, 8")
+                if is_exported_function:
+                    instructions.append(RiscvInstruction("ld ra, 0(sp)", raw=True))
+                    instructions.append(RiscvInstruction("addi sp, sp, 8", raw=True))
+
+                # we have an assumption here, for the first function in every file
+                # it's an exported function: which is linked with C code.
+                # we mimimc x86 call, before every "call" opcode, push an dummy address on stack
+                # to make stack balanced. Then pop it before returning.
+                # But for the exported function doesn't require it.
+                if not is_exported_function:
+                    append_raw("addi sp, sp, 8")
+                else:
+                    is_exported_function = False
+
                 instructions.append(RiscvInstruction("ret"))
             else:
                 append_raw(f"# special directive: {fields}")

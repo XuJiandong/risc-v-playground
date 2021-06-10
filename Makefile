@@ -82,7 +82,7 @@ build/ll_u256_mont-riscv64.o: c/ll_u256_mont-riscv64.S
 build/mul_mont_384.o: c/mul_mont_384.S
 	$(CC) -c -DCKB_DECLARATION_ONLY $(CFLAGS) -o $@ $<
 
-build/blst_mul_mont_384.o: x86-64/mul_mont_384.S.riscv.S
+build/blst_mul_mont_384.o: x86-64/blst_mul_mont_384.S.riscv.S
 	$(CC) -c -DCKB_DECLARATION_ONLY $(CFLAGS) -o $@ $<
 
 build/mul_mont_384_s.o: c/mul_mont_384_s.S
@@ -137,6 +137,7 @@ run-mont:
 bench-mont-384:
 	$(CKB_VM_CLI) --bin build/mont -- -bench384
 	$(CKB_VM_CLI) --bin build/mont -- -bench384asm
+	$(CKB_VM_CLI) --bin build/mont -- -bench384asm2
 
 bench-mont-384-s:
 	$(CKB_VM_CLI) --bin build/mont_s -- -bench384

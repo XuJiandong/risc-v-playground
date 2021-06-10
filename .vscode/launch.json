@@ -9,7 +9,7 @@
             "type": "python",
             "request": "launch",
             "program": "${file}",
-            "args": ["-f", "mul_mont_384.S", "-c"],
+            "args": ["-f", "blst_mul_mont_384.S", "-c"],
             "cwd": "${workspaceFolder}/x86-64",
             "console": "integratedTerminal"
         }
