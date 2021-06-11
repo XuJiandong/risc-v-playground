@@ -87,7 +87,8 @@ def T(operand):
 # internal format of X64Operand is always X64
 class X64Operand:
     REG = re.compile(r'%(\w+)')
-    MEM = re.compile(r'([\d-]+)\((%\w+)\)')
+    MEM = re.compile(r'([\d\+-]+)\((%\w+)\)')
+    MEM2 = re.compile(r'\((%\w+)\)')
     IMM = re.compile(r'\$([\w-]+)')
     LBL = re.compile(r'([0-9a-zA-Z_\.]+)')
 
@@ -104,8 +105,17 @@ class X64Operand:
             reg = match.group(2)
             self.type = "mem"
             self.reg = reg
-            self.imm = int(imm)
+            self.imm = X64Operand.calculate_imm(imm)
             return
+
+        match = X64Operand.MEM2.match(field)
+        if match:
+            reg = match.group(1)
+            self.type = "mem"
+            self.reg = reg
+            self.imm = 0
+            return
+
         match = X64Operand.IMM.match(field)
         if match:
             imm = match.group(1)
@@ -134,6 +144,13 @@ class X64Operand:
             return f"{self.label}"
         else:
             assert False
+
+    def calculate_imm(imm: str):
+        if imm.find("+") >= 0:
+            nums = imm.split("+")
+            return sum([int(n) for n in nums])
+        else:
+            return int(imm)
 
     def load_mem(self):
         global RISCV_TEMP_REG
@@ -188,6 +205,9 @@ class RiscvInstruction:
 
     def is_opcode(self):
         return self.opcode
+
+    def set_origin_x64(self, asm):
+        self.x64asm = asm
 
     def optimize_str(self, s):
         if self.optimized:
@@ -388,6 +408,8 @@ class X64Insruction:
                 (reg, i) = src.load_mem()
                 res.append(i)
                 res.append(RiscvInstruction("mul", dest, dest, reg))
+            elif src.type == "reg" and dest.type == "reg":
+                res.append(RiscvInstruction("mul", dest, dest, src))
             return res
         else:
             assert False
@@ -549,18 +571,18 @@ class X64Insruction:
         return self.cmovcc(r"%flag_carry")
 
     def trans_andq(self):
-        src = trans_operand(self.src())
-        dest = trans_operand(self.dest())
+        src = self.src()
+        dest = self.dest()
         return [RiscvInstruction("and", dest, dest, src)]
 
     def trans_notq(self):
-        src = trans_operand(self.src())
-        dest = trans_operand(self.dest())
+        src = self.src()
+        dest = self.dest()
         return [RiscvInstruction("not", dest, dest, src)]
 
     def trans_orq(self):
-        src = trans_operand(self.src())
-        dest = trans_operand(self.dest())
+        src = self.src()
+        dest = self.dest()
         return [RiscvInstruction("or", dest, dest, src)]
 
     # performs a bitwise AND on two operands:
@@ -619,6 +641,7 @@ riscv_cost_model = {
     "mulhu": 5,
     "xor": 1,
     "addi": 1,
+    "and": 1,
 }
 
 
@@ -819,13 +842,14 @@ def optimize_push(instructions):
 
         if len(imm) > 1:
             offset = -sum(imm)
-            inst2.append(RiscvInstruction("addi", X64Operand(r"%rsp"), X64Operand(r"%rsp"), X64Operand(f"${-offset}")))
+            inst2.append(RiscvInstruction("addi", X64Operand(
+                r"%rsp"), X64Operand(r"%rsp"), X64Operand(f"${-offset}")))
             offset -= 8
             for reg in regs:
                 inst2.append(RiscvInstruction(
                     f"sd {reg}, {offset}(sp)", raw=True))
                 offset -= 8
-            
+
             res += inst2
             res += [instructions[index]]
         else:
@@ -857,9 +881,11 @@ def convert(asm, output_file):
             if not isinstance(riscv0, list):
                 riscv.append(riscv0)
             else:
+                assert len(riscv0) > 0
                 riscv = riscv0
             for r in riscv:
                 assert isinstance(r, RiscvInstruction)
+                r.set_origin_x64(fields)
                 instructions.append(r)
         elif is_function(fields):
             fun_name = fields[0]

@@ -8,8 +8,21 @@
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
-            "program": "${file}",
+            "program": "x64-riscv.py",
             "args": ["-f", "blst_mul_mont_384.S", "-c"],
+            "cwd": "${workspaceFolder}/x86-64",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: Current File(x)",
+            "type": "python",
+            "request": "launch",
+            "program": "x64-riscv.py",
+            "args": [
+                "-f",
+                "blst_mul_mont_384x.S",
+                "-c"
+            ],
             "cwd": "${workspaceFolder}/x86-64",
             "console": "integratedTerminal"
         }

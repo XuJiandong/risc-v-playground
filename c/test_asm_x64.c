@@ -5,6 +5,8 @@
 uint64_t test_sbb(void);
 uint64_t test_adc(void);
 uint64_t test_add(void);
+uint64_t test_lea(void);
+
 
 #define CF 0x0001
 #define ZF 0x0040
@@ -34,5 +36,6 @@ int main(int argc, const char *argv[]) {
   printf("test_adc:\n");
   dump_flags(res);
 
+  res = test_lea();
   return 0;
 }

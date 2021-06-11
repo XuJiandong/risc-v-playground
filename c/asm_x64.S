@@ -60,3 +60,14 @@ _test_add:
 	popq %rbp
     retq
 
+.globl    _test_lea
+.align   4
+_test_lea:
+	pushq	%rbp
+	movq	%rsp, %rbp
+
+    leaq 40+96(%rsp), %rax
+    leaq 136(%rsp), %rax
+
+	popq %rbp
+    retq

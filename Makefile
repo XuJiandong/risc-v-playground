@@ -66,6 +66,7 @@ build/test_asm: build/test_asm.o build/asm.o
 ### test_asm_x64
 build/asm_x64.o: c/asm_x64.S
 	$(X64_CC) -c $(X64_CFLAGS) -o $@ $<
+	$(X64_CC) -S -c $(X64_CFLAGS) -o $@.S $<
 
 build/test_asm_x64.o: c/test_asm_x64.c
 	$(X64_CC) -c $(X64_CFLAGS) -o $@ $<
@@ -85,17 +86,20 @@ build/mul_mont_384.o: c/mul_mont_384.S
 build/blst_mul_mont_384.o: x86-64/blst_mul_mont_384.S.riscv.S
 	$(CC) -c -DCKB_DECLARATION_ONLY $(CFLAGS) -o $@ $<
 
+build/blst_mul_mont_384x.o: x86-64/blst_mul_mont_384x.S.riscv.S
+	$(CC) -c -DCKB_DECLARATION_ONLY $(CFLAGS) -o $@ $<
+
 build/mul_mont_384_s.o: c/mul_mont_384_s.S
 	$(CC) -c -DCKB_DECLARATION_ONLY $(CFLAGS) -o $@ $<
 
 build/mont.o: c/mont.c
 	$(CC) -c $(CFLAGS) -o $@ $<
 
-build/mont: build/ll_u256_mont-riscv64.o build/mul_mont_384.o build/mont.o build/blst_mul_mont_384.o
+build/mont: build/ll_u256_mont-riscv64.o build/mul_mont_384.o build/mont.o build/blst_mul_mont_384.o build/blst_mul_mont_384x.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
 	$(CC) -S $(CFLAGS) -o build/mont.S c/mont.c
 
-build/mont_s: build/ll_u256_mont-riscv64.o build/mul_mont_384_s.o build/mont.o build/blst_mul_mont_384.o
+build/mont_s: build/ll_u256_mont-riscv64.o build/mul_mont_384_s.o build/mont.o build/blst_mul_mont_384.o build/blst_mul_mont_384x.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
 
 ### convert mul_mont_384_c_ref.c into asm version

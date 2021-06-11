@@ -83,6 +83,74 @@ __attribute__((noinline)) static void mul_mont_n(limb_t ret[], const limb_t a[],
   for (i = 0; i < n; i++) ret[i] = (ret[i] & ~mask) | (tmp[i] & mask);
 }
 
+#if LIMB_T_BITS == 64
+#define TO_LIMB_T(limb64) limb64
+#else
+#define TO_LIMB_T(limb64) (limb_t) limb64, (limb_t)(limb64 >> 32)
+#endif
+
+#define NLIMBS(bits) (bits / LIMB_T_BITS)
+typedef limb_t vec384[NLIMBS(384)];
+typedef vec384 vec384x[2];
+
+static void add_mod_n(limb_t ret[], const limb_t a[], const limb_t b[],
+                      const limb_t p[], size_t n) {
+  llimb_t limbx;
+  limb_t mask, carry, borrow, tmp[n];
+  size_t i;
+
+  for (carry = 0, i = 0; i < n; i++) {
+    limbx = a[i] + (b[i] + (llimb_t)carry);
+    tmp[i] = (limb_t)limbx;
+    carry = (limb_t)(limbx >> LIMB_T_BITS);
+  }
+
+  for (borrow = 0, i = 0; i < n; i++) {
+    limbx = tmp[i] - (p[i] + (llimb_t)borrow);
+    ret[i] = (limb_t)limbx;
+    borrow = (limb_t)(limbx >> LIMB_T_BITS) & 1;
+  }
+
+  mask = carry - borrow;
+
+  for (i = 0; i < n; i++) ret[i] = (ret[i] & ~mask) | (tmp[i] & mask);
+}
+
+static void sub_mod_n(limb_t ret[], const limb_t a[], const limb_t b[],
+                      const limb_t p[], size_t n) {
+  llimb_t limbx;
+  limb_t mask, carry, borrow;
+  size_t i;
+
+  for (borrow = 0, i = 0; i < n; i++) {
+    limbx = a[i] - (b[i] + (llimb_t)borrow);
+    ret[i] = (limb_t)limbx;
+    borrow = (limb_t)(limbx >> LIMB_T_BITS) & 1;
+  }
+
+  mask = 0 - borrow;
+
+  for (carry = 0, i = 0; i < n; i++) {
+    limbx = ret[i] + ((p[i] & mask) + (llimb_t)carry);
+    ret[i] = (limb_t)limbx;
+    carry = (limb_t)(limbx >> LIMB_T_BITS);
+  }
+}
+
+void mul_mont_384x(vec384x ret, const vec384x a, const vec384x b,
+                   const vec384 p, limb_t n0) {
+  vec384 aa, bb, cc;
+
+  add_mod_n(aa, a[0], a[1], p, NLIMBS(384));
+  add_mod_n(bb, b[0], b[1], p, NLIMBS(384));
+  mul_mont_n(bb, bb, aa, p, n0, NLIMBS(384));
+  mul_mont_n(aa, a[0], b[0], p, n0, NLIMBS(384));
+  mul_mont_n(cc, a[1], b[1], p, n0, NLIMBS(384));
+  sub_mod_n(ret[0], aa, cc, p, NLIMBS(384));
+  sub_mod_n(ret[1], bb, aa, p, NLIMBS(384));
+  sub_mod_n(ret[1], ret[1], cc, p, NLIMBS(384));
+}
+
 bool check_result(uint64_t* result, uint64_t* expected, size_t len) {
   bool ret = true;
   for (size_t i = 0; i < len; i++) {
@@ -105,6 +173,9 @@ __attribute__((noinline)) void mul_mont_384(limb_t ret[], const limb_t a[],
 __attribute__((noinline)) void blst_mul_mont_384(limb_t ret[], const limb_t a[],
                                                  const limb_t b[],
                                                  const limb_t p[], limb_t n0);
+__attribute__((noinline)) void blst_mul_mont_384x(vec384x ret, const vec384x a,
+                                             const vec384x b, const vec384 p,
+                                             limb_t n0);
 
 __attribute__((noinline)) void ll_u256_mont_mul(uint64_t rd[4],
                                                 const uint64_t ad[4],
@@ -131,6 +202,39 @@ int bench_384(void) {
   }
   printf("done\n");
   return 0;
+}
+
+void verify_384x(void) {
+  vec384x result = {0};
+  const vec384x a = {
+      {0xce8c0cc97e7a3027, 0xfc15bac58616015, 0x158831ba1c2c4ea6,
+       0x166188c234f8200b, 0x3b59569282528b5e, 0xd63a606f6afeba1},
+      {0xce8c0cc97e7a3027, 0xfc15bac58616015, 0x158831ba1c2c4ea6,
+       0x166188c234f8200b, 0x3b59569282528b5e, 0xd63a606f6afeba1},
+  };
+  const vec384x b = {
+      {0x192f996e0ec92133, 0x9038456a15d49df3, 0x98f16fe4889fd109,
+       0xd8c4a3ff44714ebc, 0x31740434d39a3eb9, 0xedfd8a69df4e386},
+      {0x192f996e0ec92133, 0x9038456a15d49df3, 0x98f16fe4889fd109,
+       0xd8c4a3ff44714ebc, 0x31740434d39a3eb9, 0xedfd8a69df4e386}};
+
+  const vec384 N = {0xb9feffffffffaaab, 0x1eabfffeb153ffff, 0x6730d2a0f6b0f624,
+                    0x64774b84f38512bf, 0x4b1ba7b6434bacd7, 0x1a0111ea397fe69a};
+  uint64_t k = ll_invert_limb(N[0]);
+  printf("mul_mont_384x starts\n");
+  mul_mont_384x(result, a, b, N, k);
+
+  vec384x result2 = {0};
+  blst_mul_mont_384x(result2, a, b, N, k);
+  for (int i = 0; i < 2; i++) {
+    for (int j = 0; j < 6; j++) {
+      if (result[i][j] != result2[i][j]) {
+        printf("failed, wrong result at index %d, %d: %llx(correct) vs %llx(wrong)\n",
+               i, j, result[i][j], result2[i][j]);
+      }
+    }
+  }
+  printf("mul_mont_384x done\n");
 }
 
 int verify_384(void) {
@@ -168,6 +272,7 @@ int verify_384(void) {
   }
   printf("blst_mul_mont_384 done\n");
 
+  verify_384x();
   return 0;
 }
 
