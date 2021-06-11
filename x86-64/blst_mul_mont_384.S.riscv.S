@@ -46,9 +46,6 @@ sd    a4, 0(sp)
 # movq    %rdi, 8(%rsp)
 sd    a0, 8(sp)
 # call    __blst_mulq_mont_384
-auipc t1,0
-addi sp, sp, -8
-sd t1, 0(sp)
 call    __blst_mulq_mont_384
 # movq    24(%rsp), %r15
 ld    s5, 24(sp)
@@ -72,6 +69,8 @@ ret
 .globl    __blst_mulq_mont_384
 .align    4
 __blst_mulq_mont_384:
+addi sp, sp, -8
+sd ra, 0(sp)
 # .byte    0xf3, 0x0f, 0x1e, 0xfa
 # special directive: ['.byte', '0xf3', '0x0f', '0x1e', '0xfa']
 # movq    %rax, %rdi
@@ -1480,5 +1479,6 @@ sd    t0, 32(a0)
 # movq    %r11, 40(%rdi)
 sd    t1, 40(a0)
 # .byte    0xf3, 0xc3
+ld ra, 0(sp)
 addi sp, sp, 8
 ret    

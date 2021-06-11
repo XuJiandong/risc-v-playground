@@ -11,7 +11,6 @@ uint32_t loop_and_add(uint32_t count) {
   return result;
 }
 
-
 uint64_t test_i(void) {
   uint64_t a = 0x40003080;
   uint64_t b = 1;

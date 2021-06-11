@@ -5,8 +5,9 @@ typedef uint64_t limb_t;
 typedef unsigned __int128 llimb_t;
 #define LIMB_T_BITS 64
 
-__attribute__ ((noinline)) 
-void mul_mont_384(limb_t ret[], const limb_t a[], const limb_t b[], const limb_t p[], limb_t n0) {
+__attribute__((noinline)) void mul_mont_384(limb_t ret[], const limb_t a[],
+                                            const limb_t b[], const limb_t p[],
+                                            limb_t n0) {
   size_t n = 6;
   llimb_t limbx;
   limb_t mask, borrow, mx, hi, tmp[n + 1], carry;
@@ -55,4 +56,3 @@ void mul_mont_384(limb_t ret[], const limb_t a[], const limb_t b[], const limb_t
 
   for (i = 0; i < n; i++) ret[i] = (ret[i] & ~mask) | (tmp[i] & mask);
 }
-

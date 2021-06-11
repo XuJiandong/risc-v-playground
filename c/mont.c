@@ -26,14 +26,15 @@ static uint64_t ll_invert_limb(uint64_t a) {
   return inv;
 }
 
-
 // blst's C version of mul_mont.
 typedef uint64_t limb_t;
 typedef unsigned __int128 llimb_t;
 #define LIMB_T_BITS 64
 
-__attribute__ ((noinline)) static void mul_mont_n(limb_t ret[], const limb_t a[], const limb_t b[],
-                       const limb_t p[], limb_t n0, size_t n) {
+__attribute__((noinline)) static void mul_mont_n(limb_t ret[], const limb_t a[],
+                                                 const limb_t b[],
+                                                 const limb_t p[], limb_t n0,
+                                                 size_t n) {
   llimb_t limbx;
   limb_t mask, borrow, mx, hi, tmp[n + 1], carry;
   size_t i, j;
@@ -98,11 +99,18 @@ bool check_result(uint64_t* result, uint64_t* expected, size_t len) {
 }
 
 // asm version
-__attribute__ ((noinline)) void mul_mont_384(limb_t ret[], const limb_t a[], const limb_t b[], const limb_t p[], limb_t n0);
-__attribute__((noinline)) void blst_mul_mont_384(limb_t ret[], const limb_t a[], const limb_t b[], const limb_t p[], limb_t n0);
+__attribute__((noinline)) void mul_mont_384(limb_t ret[], const limb_t a[],
+                                            const limb_t b[], const limb_t p[],
+                                            limb_t n0);
+__attribute__((noinline)) void blst_mul_mont_384(limb_t ret[], const limb_t a[],
+                                                 const limb_t b[],
+                                                 const limb_t p[], limb_t n0);
 
-__attribute__ ((noinline)) void ll_u256_mont_mul(uint64_t rd[4], const uint64_t ad[4],
-                      const uint64_t bd[4], const uint64_t Nd[4], uint64_t k0);
+__attribute__((noinline)) void ll_u256_mont_mul(uint64_t rd[4],
+                                                const uint64_t ad[4],
+                                                const uint64_t bd[4],
+                                                const uint64_t Nd[4],
+                                                uint64_t k0);
 
 // TODO: the cycles is expected to be 1824 cycles per mul_mont_n
 // but now it's 1240?
@@ -125,7 +133,6 @@ int bench_384(void) {
   return 0;
 }
 
-
 int verify_384(void) {
   printf("verify for 384 bits asm version\n");
   uint64_t result[6] = {0};
@@ -140,29 +147,29 @@ int verify_384(void) {
   mul_mont_n(result, a, b, N, k, 6);
 
   printf("mul_mont_384 starts\n");
-  uint64_t result2[6] = {0};
+  uint64_t result2[6] = {0xff};
   mul_mont_384(result2, a, b, N, k);
   for (int i = 0; i < 6; i++) {
     if (result[i] != result2[i]) {
-      printf("failed, wrong result at index %d: %lld(correct) vs %lld(wrong)\n", i, result[i], result2[2]);
+      printf("failed, wrong result at index %d: %lld(correct) vs %lld(wrong)\n",
+             i, result[i], result2[2]);
     }
   }
   printf("mul_mont_384 done\n");
 
+  uint64_t result3[6] = {0xff};
   printf("blst_mul_mont_384 starts\n");
-  blst_mul_mont_384(result2, a, b, N, k);
-  for (int i = 0; i < 6; i++)
-  {
-    if (result[i] != result2[i])
-    {
-      printf("failed, wrong result at index %d: %lld(correct) vs %lld(wrong)\n", i, result[i], result2[2]);
+  blst_mul_mont_384(result3, a, b, N, k);
+  for (int i = 0; i < 6; i++) {
+    if (result[i] != result3[i]) {
+      printf("failed, wrong result at index %d: %lld(correct) vs %lld(wrong)\n",
+             i, result[i], result3[2]);
     }
   }
   printf("blst_mul_mont_384 done\n");
 
   return 0;
 }
-
 
 int bench_384_asm(void) {
   printf("benchmark for 384 bits, asm version\n");
@@ -183,9 +190,11 @@ int bench_384_asm(void) {
 }
 
 int bench_384_asm2(void) {
-  printf("benchmark for 384 bits, asm version (generated from blst asm version)\n");
+  printf(
+      "benchmark for 384 bits, asm version (generated from blst asm "
+      "version)\n");
   uint64_t result[6] = {0};
-  uint64_t a[6] = {0xce8c0cc97e7a3027, 0xfc15bac58616015, 0x158831ba1c2c4ea6,
+  uint64_t a[6] = {0xce8c0cc97e7a3027, 0xfc15bac58616015,  0x158831ba1c2c4ea6,
                    0x166188c234f8200b, 0x3b59569282528b5e, 0xd63a606f6afeba1};
   uint64_t b[6] = {0x192f996e0ec92133, 0x9038456a15d49df3, 0x98f16fe4889fd109,
                    0xd8c4a3ff44714ebc, 0x31740434d39a3eb9, 0xedfd8a69df4e386};
@@ -193,14 +202,12 @@ int bench_384_asm2(void) {
                          0x6730d2a0f6b0f624, 0x64774b84f38512bf,
                          0x4b1ba7b6434bacd7, 0x1a0111ea397fe69a};
   uint64_t k = ll_invert_limb(N[0]);
-  for (int i = 0; i < LOOP_COUNT2; i++)
-  {
+  for (int i = 0; i < LOOP_COUNT2; i++) {
     blst_mul_mont_384(result, a, b, N, k);
   }
   printf("done\n");
   return 0;
 }
-
 
 int main(int argc, const char* argv[]) {
   bool asm_version = false;

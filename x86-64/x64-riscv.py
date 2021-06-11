@@ -88,7 +88,7 @@ def T(operand):
 class X64Operand:
     REG = re.compile(r'%(\w+)')
     MEM = re.compile(r'([\d-]+)\((%\w+)\)')
-    IMM = re.compile(r'\$(\w+)')
+    IMM = re.compile(r'\$([\w-]+)')
     LBL = re.compile(r'([0-9a-zA-Z_\.]+)')
 
     # field is with AT&T x86 format
@@ -344,10 +344,6 @@ class X64Insruction:
 
     def trans_call(self):
         res = []
-        res.append(RiscvInstruction("auipc t1,0", raw=True))
-        # mimic x86, otherwise the stack offset is difficult to calculate in callee
-        res.append(RiscvInstruction("addi sp, sp, -8", raw=True))
-        res.append(RiscvInstruction("sd t1, 0(sp)", raw=True))
         dest = self.dest()  # it's a label
         res.append(RiscvInstruction("call", dest))
         return res
@@ -754,9 +750,93 @@ def test(asm):
     return True
 
 
+def check_stack(instructions):
+    offset = 0
+    for inst in instructions:
+        if inst.opcode and inst.opcode == "addi":
+            dest = inst.operands[0].to_riscv()
+            src = inst.operands[1].to_riscv()
+            imm = inst.operands[2].to_riscv()
+            if dest == "sp" and src == "sp":
+                offset += int(imm)
+    if offset != 0:
+        print(f"the stack is not balanced: {offset}")
+    else:
+        print("the stack is balanced.")
+
+
+# combine the push stack operations:
+# for example, the following:
+# addi    sp, sp, -8
+# sd    fp, 0(sp)
+# addi    sp, sp, -8
+# sd    s1, 0(sp)
+#
+# can be combined into
+#
+# addi sp, sp -16
+# sd fp, 8(sp)
+# sd s1, 0(sp)
+
+def optimize_push(instructions):
+    def is_addi(inst):
+        if inst.opcode and inst.opcode == "addi":
+            dest = inst.operands[0].to_riscv()
+            src = inst.operands[1].to_riscv()
+            return dest == src and dest == "sp"
+        else:
+            return False
+
+    def is_sd(inst):
+        if inst.opcode and inst.opcode == "sd":
+            dest = inst.operands[0].to_riscv()
+            src = inst.operands[1].to_riscv()
+            if src.find("0(sp)") >= 0:
+                return True
+            else:
+                return False
+        else:
+            return False
+
+    index = 0
+    res = []
+    while True:
+        if index >= (len(instructions) - 2):
+            res.append(instructions[index])
+            res.append(instructions[index+1])
+            break
+        imm = []
+        regs = []
+        inst2 = []
+
+        while is_addi(instructions[index]) and is_sd(instructions[index+1]):
+            offset = int(instructions[index].operands[2].to_riscv())
+            imm += [offset]
+            regs += [instructions[index+1].operands[0].to_riscv()]
+            index += 2
+            if not instructions[index].is_opcode():
+                index += 1
+
+        if len(imm) > 1:
+            offset = -sum(imm)
+            inst2.append(RiscvInstruction("addi", X64Operand(r"%rsp"), X64Operand(r"%rsp"), X64Operand(f"${-offset}")))
+            offset -= 8
+            for reg in regs:
+                inst2.append(RiscvInstruction(
+                    f"sd {reg}, {offset}(sp)", raw=True))
+                offset -= 8
+            
+            res += inst2
+            res += [instructions[index]]
+        else:
+            res += [instructions[index]]
+
+        index += 1
+    return res
+
+
 def convert(asm, output_file):
     instructions = []
-    is_exported_function = True
 
     def append_raw(code):
         instructions.append(RiscvInstruction(code, raw=True))
@@ -791,28 +871,20 @@ def convert(asm, output_file):
                 ".align", "4", directive=True))
             instructions.append(RiscvInstruction(fun_name, label=True))
 
-
-            if is_exported_function:
-                instructions.append(RiscvInstruction("addi sp, sp, -8", raw=True))
-                instructions.append(RiscvInstruction("sd ra, 0(sp)", raw=True))
+            instructions.append(RiscvInstruction("addi sp, sp, -8", raw=True))
+            instructions.append(RiscvInstruction("sd ra, 0(sp)", raw=True))
 
         elif is_special_directive(fields[0]):
             # https://repzret.org/p/repzret/
             if len(fields) == 3 and fields[0] == ".byte" and fields[1].lower() == "0xf3" \
                     and fields[2].lower() == "0xc3":
-                if is_exported_function:
-                    instructions.append(RiscvInstruction("ld ra, 0(sp)", raw=True))
-                    instructions.append(RiscvInstruction("addi sp, sp, 8", raw=True))
-
                 # we have an assumption here, for the first function in every file
                 # it's an exported function: which is linked with C code.
-                # we mimimc x86 call, before every "call" opcode, push an dummy address on stack
+                # we mimimc x86 call, at the beginning of function, push the RA on stack
                 # to make stack balanced. Then pop it before returning.
-                # But for the exported function doesn't require it.
-                if not is_exported_function:
-                    append_raw("addi sp, sp, 8")
-                else:
-                    is_exported_function = False
+                instructions.append(RiscvInstruction("ld ra, 0(sp)", raw=True))
+                instructions.append(RiscvInstruction(
+                    "addi sp, sp, 8", raw=True))
 
                 instructions.append(RiscvInstruction("ret"))
             else:
@@ -825,6 +897,10 @@ def convert(asm, output_file):
             append_raw(f"# function: {fields}")
         else:
             assert False
+
+    # print("start optimizing...")
+    # instructions = optimize_push(instructions)
+
     total_opcode = 0
     total_cycles = 0
     output = open(output_file, "w")
@@ -839,6 +915,7 @@ def convert(asm, output_file):
 
     print(f"done, about {total_opcode} instructions generated!")
     print(f"estimated cycles: {total_cycles}.")
+    check_stack(instructions)
 
 
 parser = argparse.ArgumentParser(
