@@ -452,37 +452,43 @@ class X64Insruction:
     # 2. reg, reg
     # 3. mem, reg
 
-    # Thus, adding src, dest, and flag_carry with results in dest and carry-out in carry_flag:
-    # add dest, dest, flag_carry
-    # sltu carry_flag, a0, a1
+
+    # Adding a0, a1, and a2 with results in a0 and carry-out in a1.
+    # adcq    %rdx,%rbp
+    #
+    # add a0, a0, a1
+    # sltu a1, a0, a1
+    # add a0, a0, a2
+    # sltu a2, a0, a2
+    # or a1, a1, a2
+    ####################
+    # add dest, dest, carry_flag
+    # sltu carry_flag, dest, carry_flag
     # add dest, dest, src
-    # sltu carry_flag2, a0, a2
-    # add carry_flag, carry_flag2, carry_flag
+    # sltu src, dest, src
+    # or carry_flag, carry_flag, src
+
     def trans_adcq(self, carry=True):
         src = self.src(0)
         dest = self.dest()
 
         carry_flag = X64Operand(r"%flag_carry")
-        carry_flag2 = RISCV_TEMP_REG2
         res = []
 
         def f(src, dest):
             res.append(RiscvInstruction("add", dest, dest, carry_flag))
-            if carry:
-                res.append(RiscvInstruction(
-                    "sltu", carry_flag2, dest, carry_flag))
+            res.append(RiscvInstruction("sltu", carry_flag, dest, carry_flag))
             res.append(RiscvInstruction("add", dest, dest, src))
-            if carry:
-                res.append(RiscvInstruction(
-                    "sltu", carry_flag, dest, src))
-                res.append(RiscvInstruction(
-                    "add", carry_flag, carry_flag, carry_flag2))
+            res.append(RiscvInstruction("sltu", src, dest, src))
+            res.append(RiscvInstruction("add", carry_flag, carry_flag, src))
+
         if src.type == "reg" and dest.type == "reg":
             f(self.src(0), self.dest())
         elif src.type == "imm" and dest.type == "reg":
             res = []
             if src.imm == 0:
                 res.append(RiscvInstruction("add", dest, carry_flag, dest))
+                res.append(RiscvInstruction("sltu", carry_flag, dest, carry_flag))
             else:
                 assert False
         elif src.type == "mem" and dest.type == "reg":
