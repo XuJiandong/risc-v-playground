@@ -7,7 +7,6 @@ uint64_t test_adc(void);
 uint64_t test_add(void);
 uint64_t test_lea(void);
 
-
 #define CF 0x0001
 #define ZF 0x0040
 #define SF 0x0080

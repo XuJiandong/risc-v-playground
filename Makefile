@@ -142,6 +142,8 @@ bench-mont-384:
 	$(CKB_VM_CLI) --bin build/mont -- -bench384
 	$(CKB_VM_CLI) --bin build/mont -- -bench384asm
 	$(CKB_VM_CLI) --bin build/mont -- -bench384asm2
+	$(CKB_VM_CLI) --bin build/mont -- -bench384x
+	$(CKB_VM_CLI) --bin build/mont -- -bench384xasm2
 
 bench-mont-384-s:
 	$(CKB_VM_CLI) --bin build/mont_s -- -bench384
