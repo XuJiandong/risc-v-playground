@@ -109,6 +109,9 @@ build/mul_mont_384_c_ref.s: c/mul_mont_384_c_ref.c
 mont384-c2asm:
 	docker run --rm -v `pwd`:/code ${BUILDER_DOCKER} bash -c "cd /code && make build/mul_mont_384_c_ref.s"
 
+gen:
+	cd x86-64; make all
+
 # anohter try, with minimal size
 build/mul_mont_384_c_ref_s.s: c/mul_mont_384_c_ref.c
 	$(CC) -S $(subst -O3,-Os,$(subst -g,,$(CFLAGS))) -o $@ $<

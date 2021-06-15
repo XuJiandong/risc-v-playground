@@ -94,7 +94,6 @@ sltu    t2, a5, a6
 add    a6, a0, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %r10
 add    t0, a2, zero
 # mulq    %r12
@@ -107,7 +106,6 @@ sltu    t2, t0, a6
 add    a6, a0, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %r11
 add    t1, a2, zero
 # movq    %r8, %rbp
@@ -125,7 +123,6 @@ sltu    t2, t1, a6
 add    a6, a0, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %r12
 add    s2, a2, zero
 # mulq    32(%rsi)
@@ -139,7 +136,6 @@ sltu    t2, s2, a6
 add    a6, a0, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %r13
 add    s3, a2, zero
 # mulq    40(%rsi)
@@ -153,7 +149,6 @@ sltu    t2, s3, a6
 add    a6, a4, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # xorq    %r15, %r15
 xor    s5, s5, s5
 # movq    %rdx, %r14
@@ -172,7 +167,7 @@ add    fp, fp, t2
 sltu    t2, fp, t2
 add    fp, fp, a2
 sltu    a2, fp, a2
-add    t2, t2, a2
+or    t2, t2, a2
 # mulq    8(%rcx)
 ld    t6, 8(a3)
 mulhu    a2, t6, a6
@@ -184,13 +179,11 @@ sltu    t2, a5, a6
 add    a6, a4, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %rbp, %r9
 add    a5, a5, fp
 sltu    t2, a5, fp
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %rbp
 add    fp, a2, zero
 # mulq    16(%rcx)
@@ -204,13 +197,11 @@ sltu    t2, t0, a6
 add    a6, a4, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %rbp, %r10
 add    t0, t0, fp
 sltu    t2, t0, fp
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %rbp
 add    fp, a2, zero
 # mulq    24(%rcx)
@@ -222,7 +213,6 @@ add    t1, t1, fp
 sltu    t2, t1, fp
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %rax, %r11
 add    t1, t1, a6
 sltu    t2, t1, a6
@@ -230,7 +220,6 @@ sltu    t2, t1, a6
 add    a6, a4, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %rbp
 add    fp, a2, zero
 # mulq    32(%rcx)
@@ -244,13 +233,11 @@ sltu    t2, s2, a6
 add    a6, a4, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %rbp, %r12
 add    s2, s2, fp
 sltu    t2, s2, fp
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %rbp
 add    fp, a2, zero
 # mulq    40(%rcx)
@@ -264,7 +251,6 @@ sltu    t2, s3, a6
 ld    a6, 8(s1)
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %rbp, %r13
 add    s3, s3, fp
 sltu    t2, s3, fp
@@ -273,10 +259,9 @@ add    s4, s4, t2
 sltu    t2, s4, t2
 add    s4, s4, a2
 sltu    a2, s4, a2
-add    t2, t2, a2
+or    t2, t2, a2
 # adcq    $0, %r15
 add    s5, t2, s5
-sltu    t2, s5, t2
 # movq    %rax, %rdi
 add    a0, a6, zero
 # mulq    0(%rsi)
@@ -290,7 +275,6 @@ sltu    t2, a5, a6
 add    a6, a0, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %r8
 add    a4, a2, zero
 # mulq    8(%rsi)
@@ -304,13 +288,11 @@ sltu    t2, t0, a6
 add    a6, a0, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %r8, %r10
 add    t0, t0, a4
 sltu    t2, t0, a4
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %r8
 add    a4, a2, zero
 # mulq    16(%rsi)
@@ -324,13 +306,11 @@ sltu    t2, t1, a6
 add    a6, a0, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %r8, %r11
 add    t1, t1, a4
 sltu    t2, t1, a4
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %r8
 add    a4, a2, zero
 # movq    %r9, %rbp
@@ -349,13 +329,11 @@ sltu    t2, s2, a6
 add    a6, a0, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %r8, %r12
 add    s2, s2, a4
 sltu    t2, s2, a4
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %r8
 add    a4, a2, zero
 # mulq    32(%rsi)
@@ -369,13 +347,11 @@ sltu    t2, s3, a6
 add    a6, a0, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %r8, %r13
 add    s3, s3, a4
 sltu    t2, s3, a4
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %r8
 add    a4, a2, zero
 # mulq    40(%rsi)
@@ -387,7 +363,6 @@ add    s4, s4, a4
 sltu    t2, s4, a4
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # xorq    %r8, %r8
 xor    a4, a4, a4
 # addq    %rax, %r14
@@ -400,10 +375,9 @@ add    s5, s5, t2
 sltu    t2, s5, t2
 add    s5, s5, a2
 sltu    a2, s5, a2
-add    t2, t2, a2
+or    t2, t2, a2
 # adcq    $0, %r8
 add    a4, t2, a4
-sltu    t2, a4, t2
 # mulq    0(%rcx)
 ld    t6, 0(a3)
 mulhu    a2, t6, a6
@@ -418,7 +392,7 @@ add    fp, fp, t2
 sltu    t2, fp, t2
 add    fp, fp, a2
 sltu    a2, fp, a2
-add    t2, t2, a2
+or    t2, t2, a2
 # mulq    8(%rcx)
 ld    t6, 8(a3)
 mulhu    a2, t6, a6
@@ -430,13 +404,11 @@ sltu    t2, t0, a6
 add    a6, a5, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %rbp, %r10
 add    t0, t0, fp
 sltu    t2, t0, fp
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %rbp
 add    fp, a2, zero
 # mulq    16(%rcx)
@@ -450,13 +422,11 @@ sltu    t2, t1, a6
 add    a6, a5, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %rbp, %r11
 add    t1, t1, fp
 sltu    t2, t1, fp
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %rbp
 add    fp, a2, zero
 # mulq    24(%rcx)
@@ -468,7 +438,6 @@ add    s2, s2, fp
 sltu    t2, s2, fp
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %rax, %r12
 add    s2, s2, a6
 sltu    t2, s2, a6
@@ -476,7 +445,6 @@ sltu    t2, s2, a6
 add    a6, a5, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %rbp
 add    fp, a2, zero
 # mulq    32(%rcx)
@@ -490,13 +458,11 @@ sltu    t2, s3, a6
 add    a6, a5, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %rbp, %r13
 add    s3, s3, fp
 sltu    t2, s3, fp
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %rbp
 add    fp, a2, zero
 # mulq    40(%rcx)
@@ -510,7 +476,6 @@ sltu    t2, s4, a6
 ld    a6, 16(s1)
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %rbp, %r14
 add    s4, s4, fp
 sltu    t2, s4, fp
@@ -519,10 +484,9 @@ add    s5, s5, t2
 sltu    t2, s5, t2
 add    s5, s5, a2
 sltu    a2, s5, a2
-add    t2, t2, a2
+or    t2, t2, a2
 # adcq    $0, %r8
 add    a4, t2, a4
-sltu    t2, a4, t2
 # movq    %rax, %rdi
 add    a0, a6, zero
 # mulq    0(%rsi)
@@ -536,7 +500,6 @@ sltu    t2, t0, a6
 add    a6, a0, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %r9
 add    a5, a2, zero
 # mulq    8(%rsi)
@@ -550,13 +513,11 @@ sltu    t2, t1, a6
 add    a6, a0, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %r9, %r11
 add    t1, t1, a5
 sltu    t2, t1, a5
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %r9
 add    a5, a2, zero
 # mulq    16(%rsi)
@@ -570,13 +531,11 @@ sltu    t2, s2, a6
 add    a6, a0, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %r9, %r12
 add    s2, s2, a5
 sltu    t2, s2, a5
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %r9
 add    a5, a2, zero
 # movq    %r10, %rbp
@@ -595,13 +554,11 @@ sltu    t2, s3, a6
 add    a6, a0, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %r9, %r13
 add    s3, s3, a5
 sltu    t2, s3, a5
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %r9
 add    a5, a2, zero
 # mulq    32(%rsi)
@@ -615,13 +572,11 @@ sltu    t2, s4, a6
 add    a6, a0, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %r9, %r14
 add    s4, s4, a5
 sltu    t2, s4, a5
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %r9
 add    a5, a2, zero
 # mulq    40(%rsi)
@@ -633,7 +588,6 @@ add    s5, s5, a5
 sltu    t2, s5, a5
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # xorq    %r9, %r9
 xor    a5, a5, a5
 # addq    %rax, %r15
@@ -646,10 +600,9 @@ add    a4, a4, t2
 sltu    t2, a4, t2
 add    a4, a4, a2
 sltu    a2, a4, a2
-add    t2, t2, a2
+or    t2, t2, a2
 # adcq    $0, %r9
 add    a5, t2, a5
-sltu    t2, a5, t2
 # mulq    0(%rcx)
 ld    t6, 0(a3)
 mulhu    a2, t6, a6
@@ -664,7 +617,7 @@ add    fp, fp, t2
 sltu    t2, fp, t2
 add    fp, fp, a2
 sltu    a2, fp, a2
-add    t2, t2, a2
+or    t2, t2, a2
 # mulq    8(%rcx)
 ld    t6, 8(a3)
 mulhu    a2, t6, a6
@@ -676,13 +629,11 @@ sltu    t2, t1, a6
 add    a6, t0, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %rbp, %r11
 add    t1, t1, fp
 sltu    t2, t1, fp
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %rbp
 add    fp, a2, zero
 # mulq    16(%rcx)
@@ -696,13 +647,11 @@ sltu    t2, s2, a6
 add    a6, t0, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %rbp, %r12
 add    s2, s2, fp
 sltu    t2, s2, fp
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %rbp
 add    fp, a2, zero
 # mulq    24(%rcx)
@@ -714,7 +663,6 @@ add    s3, s3, fp
 sltu    t2, s3, fp
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %rax, %r13
 add    s3, s3, a6
 sltu    t2, s3, a6
@@ -722,7 +670,6 @@ sltu    t2, s3, a6
 add    a6, t0, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %rbp
 add    fp, a2, zero
 # mulq    32(%rcx)
@@ -736,13 +683,11 @@ sltu    t2, s4, a6
 add    a6, t0, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %rbp, %r14
 add    s4, s4, fp
 sltu    t2, s4, fp
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %rbp
 add    fp, a2, zero
 # mulq    40(%rcx)
@@ -756,7 +701,6 @@ sltu    t2, s5, a6
 ld    a6, 24(s1)
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %rbp, %r15
 add    s5, s5, fp
 sltu    t2, s5, fp
@@ -765,10 +709,9 @@ add    a4, a4, t2
 sltu    t2, a4, t2
 add    a4, a4, a2
 sltu    a2, a4, a2
-add    t2, t2, a2
+or    t2, t2, a2
 # adcq    $0, %r9
 add    a5, t2, a5
-sltu    t2, a5, t2
 # movq    %rax, %rdi
 add    a0, a6, zero
 # mulq    0(%rsi)
@@ -782,7 +725,6 @@ sltu    t2, t1, a6
 add    a6, a0, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %r10
 add    t0, a2, zero
 # mulq    8(%rsi)
@@ -796,13 +738,11 @@ sltu    t2, s2, a6
 add    a6, a0, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %r10, %r12
 add    s2, s2, t0
 sltu    t2, s2, t0
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %r10
 add    t0, a2, zero
 # mulq    16(%rsi)
@@ -816,13 +756,11 @@ sltu    t2, s3, a6
 add    a6, a0, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %r10, %r13
 add    s3, s3, t0
 sltu    t2, s3, t0
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %r10
 add    t0, a2, zero
 # movq    %r11, %rbp
@@ -841,13 +779,11 @@ sltu    t2, s4, a6
 add    a6, a0, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %r10, %r14
 add    s4, s4, t0
 sltu    t2, s4, t0
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %r10
 add    t0, a2, zero
 # mulq    32(%rsi)
@@ -861,13 +797,11 @@ sltu    t2, s5, a6
 add    a6, a0, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %r10, %r15
 add    s5, s5, t0
 sltu    t2, s5, t0
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %r10
 add    t0, a2, zero
 # mulq    40(%rsi)
@@ -879,7 +813,6 @@ add    a4, a4, t0
 sltu    t2, a4, t0
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # xorq    %r10, %r10
 xor    t0, t0, t0
 # addq    %rax, %r8
@@ -892,10 +825,9 @@ add    a5, a5, t2
 sltu    t2, a5, t2
 add    a5, a5, a2
 sltu    a2, a5, a2
-add    t2, t2, a2
+or    t2, t2, a2
 # adcq    $0, %r10
 add    t0, t2, t0
-sltu    t2, t0, t2
 # mulq    0(%rcx)
 ld    t6, 0(a3)
 mulhu    a2, t6, a6
@@ -910,7 +842,7 @@ add    fp, fp, t2
 sltu    t2, fp, t2
 add    fp, fp, a2
 sltu    a2, fp, a2
-add    t2, t2, a2
+or    t2, t2, a2
 # mulq    8(%rcx)
 ld    t6, 8(a3)
 mulhu    a2, t6, a6
@@ -922,13 +854,11 @@ sltu    t2, s2, a6
 add    a6, t1, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %rbp, %r12
 add    s2, s2, fp
 sltu    t2, s2, fp
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %rbp
 add    fp, a2, zero
 # mulq    16(%rcx)
@@ -942,13 +872,11 @@ sltu    t2, s3, a6
 add    a6, t1, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %rbp, %r13
 add    s3, s3, fp
 sltu    t2, s3, fp
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %rbp
 add    fp, a2, zero
 # mulq    24(%rcx)
@@ -960,7 +888,6 @@ add    s4, s4, fp
 sltu    t2, s4, fp
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %rax, %r14
 add    s4, s4, a6
 sltu    t2, s4, a6
@@ -968,7 +895,6 @@ sltu    t2, s4, a6
 add    a6, t1, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %rbp
 add    fp, a2, zero
 # mulq    32(%rcx)
@@ -982,13 +908,11 @@ sltu    t2, s5, a6
 add    a6, t1, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %rbp, %r15
 add    s5, s5, fp
 sltu    t2, s5, fp
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %rbp
 add    fp, a2, zero
 # mulq    40(%rcx)
@@ -1002,7 +926,6 @@ sltu    t2, a4, a6
 ld    a6, 32(s1)
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %rbp, %r8
 add    a4, a4, fp
 sltu    t2, a4, fp
@@ -1011,10 +934,9 @@ add    a5, a5, t2
 sltu    t2, a5, t2
 add    a5, a5, a2
 sltu    a2, a5, a2
-add    t2, t2, a2
+or    t2, t2, a2
 # adcq    $0, %r10
 add    t0, t2, t0
-sltu    t2, t0, t2
 # movq    %rax, %rdi
 add    a0, a6, zero
 # mulq    0(%rsi)
@@ -1028,7 +950,6 @@ sltu    t2, s2, a6
 add    a6, a0, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %r11
 add    t1, a2, zero
 # mulq    8(%rsi)
@@ -1042,13 +963,11 @@ sltu    t2, s3, a6
 add    a6, a0, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %r11, %r13
 add    s3, s3, t1
 sltu    t2, s3, t1
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %r11
 add    t1, a2, zero
 # mulq    16(%rsi)
@@ -1062,13 +981,11 @@ sltu    t2, s4, a6
 add    a6, a0, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %r11, %r14
 add    s4, s4, t1
 sltu    t2, s4, t1
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %r11
 add    t1, a2, zero
 # movq    %r12, %rbp
@@ -1087,13 +1004,11 @@ sltu    t2, s5, a6
 add    a6, a0, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %r11, %r15
 add    s5, s5, t1
 sltu    t2, s5, t1
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %r11
 add    t1, a2, zero
 # mulq    32(%rsi)
@@ -1107,13 +1022,11 @@ sltu    t2, a4, a6
 add    a6, a0, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %r11, %r8
 add    a4, a4, t1
 sltu    t2, a4, t1
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %r11
 add    t1, a2, zero
 # mulq    40(%rsi)
@@ -1125,7 +1038,6 @@ add    a5, a5, t1
 sltu    t2, a5, t1
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # xorq    %r11, %r11
 xor    t1, t1, t1
 # addq    %rax, %r9
@@ -1138,10 +1050,9 @@ add    t0, t0, t2
 sltu    t2, t0, t2
 add    t0, t0, a2
 sltu    a2, t0, a2
-add    t2, t2, a2
+or    t2, t2, a2
 # adcq    $0, %r11
 add    t1, t2, t1
-sltu    t2, t1, t2
 # mulq    0(%rcx)
 ld    t6, 0(a3)
 mulhu    a2, t6, a6
@@ -1156,7 +1067,7 @@ add    fp, fp, t2
 sltu    t2, fp, t2
 add    fp, fp, a2
 sltu    a2, fp, a2
-add    t2, t2, a2
+or    t2, t2, a2
 # mulq    8(%rcx)
 ld    t6, 8(a3)
 mulhu    a2, t6, a6
@@ -1168,13 +1079,11 @@ sltu    t2, s3, a6
 add    a6, s2, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %rbp, %r13
 add    s3, s3, fp
 sltu    t2, s3, fp
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %rbp
 add    fp, a2, zero
 # mulq    16(%rcx)
@@ -1188,13 +1097,11 @@ sltu    t2, s4, a6
 add    a6, s2, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %rbp, %r14
 add    s4, s4, fp
 sltu    t2, s4, fp
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %rbp
 add    fp, a2, zero
 # mulq    24(%rcx)
@@ -1206,7 +1113,6 @@ add    s5, s5, fp
 sltu    t2, s5, fp
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %rax, %r15
 add    s5, s5, a6
 sltu    t2, s5, a6
@@ -1214,7 +1120,6 @@ sltu    t2, s5, a6
 add    a6, s2, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %rbp
 add    fp, a2, zero
 # mulq    32(%rcx)
@@ -1228,13 +1133,11 @@ sltu    t2, a4, a6
 add    a6, s2, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %rbp, %r8
 add    a4, a4, fp
 sltu    t2, a4, fp
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %rbp
 add    fp, a2, zero
 # mulq    40(%rcx)
@@ -1248,7 +1151,6 @@ sltu    t2, a5, a6
 ld    a6, 40(s1)
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %rbp, %r9
 add    a5, a5, fp
 sltu    t2, a5, fp
@@ -1257,10 +1159,9 @@ add    t0, t0, t2
 sltu    t2, t0, t2
 add    t0, t0, a2
 sltu    a2, t0, a2
-add    t2, t2, a2
+or    t2, t2, a2
 # adcq    $0, %r11
 add    t1, t2, t1
-sltu    t2, t1, t2
 # movq    %rax, %rdi
 add    a0, a6, zero
 # mulq    0(%rsi)
@@ -1274,7 +1175,6 @@ sltu    t2, s3, a6
 add    a6, a0, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %r12
 add    s2, a2, zero
 # mulq    8(%rsi)
@@ -1288,13 +1188,11 @@ sltu    t2, s4, a6
 add    a6, a0, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %r12, %r14
 add    s4, s4, s2
 sltu    t2, s4, s2
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %r12
 add    s2, a2, zero
 # mulq    16(%rsi)
@@ -1308,13 +1206,11 @@ sltu    t2, s5, a6
 add    a6, a0, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %r12, %r15
 add    s5, s5, s2
 sltu    t2, s5, s2
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %r12
 add    s2, a2, zero
 # movq    %r13, %rbp
@@ -1333,13 +1229,11 @@ sltu    t2, a4, a6
 add    a6, a0, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %r12, %r8
 add    a4, a4, s2
 sltu    t2, a4, s2
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %r12
 add    s2, a2, zero
 # mulq    32(%rsi)
@@ -1353,13 +1247,11 @@ sltu    t2, a5, a6
 add    a6, a0, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %r12, %r9
 add    a5, a5, s2
 sltu    t2, a5, s2
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %r12
 add    s2, a2, zero
 # mulq    40(%rsi)
@@ -1371,7 +1263,6 @@ add    t0, t0, s2
 sltu    t2, t0, s2
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # xorq    %r12, %r12
 xor    s2, s2, s2
 # addq    %rax, %r10
@@ -1384,10 +1275,9 @@ add    t1, t1, t2
 sltu    t2, t1, t2
 add    t1, t1, a2
 sltu    a2, t1, a2
-add    t2, t2, a2
+or    t2, t2, a2
 # adcq    $0, %r12
 add    s2, t2, s2
-sltu    t2, s2, t2
 # mulq    0(%rcx)
 ld    t6, 0(a3)
 mulhu    a2, t6, a6
@@ -1402,7 +1292,7 @@ add    fp, fp, t2
 sltu    t2, fp, t2
 add    fp, fp, a2
 sltu    a2, fp, a2
-add    t2, t2, a2
+or    t2, t2, a2
 # mulq    8(%rcx)
 ld    t6, 8(a3)
 mulhu    a2, t6, a6
@@ -1414,13 +1304,11 @@ sltu    t2, s4, a6
 add    a6, s3, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %rbp, %r14
 add    s4, s4, fp
 sltu    t2, s4, fp
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %rbp
 add    fp, a2, zero
 # mulq    16(%rcx)
@@ -1434,13 +1322,11 @@ sltu    t2, s5, a6
 add    a6, s3, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %rbp, %r15
 add    s5, s5, fp
 sltu    t2, s5, fp
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %rbp
 add    fp, a2, zero
 # mulq    24(%rcx)
@@ -1452,7 +1338,6 @@ add    a4, a4, fp
 sltu    t2, a4, fp
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %rax, %r8
 add    a4, a4, a6
 sltu    t2, a4, a6
@@ -1460,7 +1345,6 @@ sltu    t2, a4, a6
 add    a6, s3, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %rbp
 add    fp, a2, zero
 # mulq    32(%rcx)
@@ -1474,13 +1358,11 @@ sltu    t2, a5, a6
 add    a6, s3, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %rbp, %r9
 add    a5, a5, fp
 sltu    t2, a5, fp
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # movq    %rdx, %rbp
 add    fp, a2, zero
 # mulq    40(%rcx)
@@ -1494,7 +1376,6 @@ sltu    t2, t0, a6
 add    a6, s4, zero
 # adcq    $0, %rdx
 add    a2, t2, a2
-sltu    t2, a2, t2
 # addq    %rbp, %r10
 add    t0, t0, fp
 sltu    t2, t0, fp
@@ -1503,10 +1384,9 @@ add    t1, t1, t2
 sltu    t2, t1, t2
 add    t1, t1, a2
 sltu    a2, t1, a2
-add    t2, t2, a2
+or    t2, t2, a2
 # adcq    $0, %r12
 add    s2, t2, s2
-sltu    t2, s2, t2
 # movq    16(%rsp), %rdi
 ld    a0, 16(sp)
 # subq    0(%rcx), %r14
@@ -1517,47 +1397,47 @@ sub    s4, s4, t6
 add    a2, s5, zero
 # sbbq    8(%rcx), %r15
 ld    t6, 8(a3)
+sub    t2, s5, t2
 sltu    a7, s5, t2
-sub    s5, s5, t2
-sltu    t2, s5, t6
-sub    s5, s5, t6
-add    t2, t2, a7
+sub    s5, t2, t6
+sltu    t6, t2, s5
+or    t2, t6, a7
 # movq    %r8, %rbx
 add    s1, a4, zero
 # sbbq    16(%rcx), %r8
 ld    t6, 16(a3)
+sub    t2, a4, t2
 sltu    a7, a4, t2
-sub    a4, a4, t2
-sltu    t2, a4, t6
-sub    a4, a4, t6
-add    t2, t2, a7
+sub    a4, t2, t6
+sltu    t6, t2, a4
+or    t2, t6, a7
 # movq    %r9, %rsi
 add    a1, a5, zero
 # sbbq    24(%rcx), %r9
 ld    t6, 24(a3)
+sub    t2, a5, t2
 sltu    a7, a5, t2
-sub    a5, a5, t2
-sltu    t2, a5, t6
-sub    a5, a5, t6
-add    t2, t2, a7
+sub    a5, t2, t6
+sltu    t6, t2, a5
+or    t2, t6, a7
 # movq    %r10, %rbp
 add    fp, t0, zero
 # sbbq    32(%rcx), %r10
 ld    t6, 32(a3)
+sub    t2, t0, t2
 sltu    a7, t0, t2
-sub    t0, t0, t2
-sltu    t2, t0, t6
-sub    t0, t0, t6
-add    t2, t2, a7
+sub    t0, t2, t6
+sltu    t6, t2, t0
+or    t2, t6, a7
 # movq    %r11, %r13
 add    s3, t1, zero
 # sbbq    40(%rcx), %r11
 ld    t6, 40(a3)
+sub    t2, t1, t2
 sltu    a7, t1, t2
-sub    t1, t1, t2
-sltu    t2, t1, t6
-sub    t1, t1, t6
-add    t2, t2, a7
+sub    t1, t2, t6
+sltu    t6, t2, t1
+or    t2, t6, a7
 # sbbq    $0, %r12
 sltu    a7, s2, t2
 sub    s2, s2, t2

@@ -71,3 +71,19 @@ _test_lea:
 
 	popq %rbp
     retq
+
+.globl    _test_adc_sbb
+.align   4
+_test_adc_sbb:
+	pushq	%rbp
+	movq	%rsp, %rbp
+
+    addq $1, %rdx
+
+    movq $-1, %rax
+    adcq $1, %rax
+    sbbq $0, %rax
+
+	popq %rbp
+    retq
+
