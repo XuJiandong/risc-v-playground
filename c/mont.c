@@ -255,24 +255,41 @@ int bench_384x_asm2(void) {
   return 0;
 }
 
-void verify_384x(void) {
+void mixed_in(uint64_t* array, size_t length, uint8_t input) {
+  // uint64_t val = input;
+  for (size_t i = 0; i < length; i++) {
+    // array[i] += val;
+    // array[i] += val << 8;
+    // array[i] += val << 16;
+    // array[i] += val << 32;
+    // array[i] += val << 40;
+    // array[i] += val << 48;
+    // array[i] += val << 56;
+    uint8_t* ptr = (uint8_t*)&array[i];
+    ptr[7] = input;
+  }
+}
+
+int verify_384x_inner(uint8_t index) {
   vec384x result = {0};
-  const vec384x a = {
+  vec384x a = {
       {0xce8c0cc97e7a3027, 0xfc15bac58616015, 0x158831ba1c2c4ea6,
        0x166188c234f8200b, 0x3b59569282528b5e, 0xd63a606f6afeba1},
       {0xce8c0cc97e7a3027, 0xfc15bac58616015, 0x158831ba1c2c4ea6,
        0x166188c234f8200b, 0x3b59569282528b5e, 0xd63a606f6afeba1},
   };
-  const vec384x b = {
-      {0x192f996e0ec92133, 0x9038456a15d49df3, 0x98f16fe4889fd109,
-       0xd8c4a3ff44714ebc, 0x31740434d39a3eb9, 0xedfd8a69df4e386},
-      {0x192f996e0ec92133, 0x9038456a15d49df3, 0x98f16fe4889fd109,
-       0xd8c4a3ff44714ebc, 0x31740434d39a3eb9, 0xedfd8a69df4e386}};
+  vec384x b = {{0x192f996e0ec92133, 0x9038456a15d49df3, 0x98f16fe4889fd109,
+                0xd8c4a3ff44714ebc, 0x31740434d39a3eb9, 0xedfd8a69df4e386},
+               {0x192f996e0ec92133, 0x9038456a15d49df3, 0x98f16fe4889fd109,
+                0xd8c4a3ff44714ebc, 0x31740434d39a3eb9, 0xedfd8a69df4e386}};
 
   const vec384 N = {0xb9feffffffffaaab, 0x1eabfffeb153ffff, 0x6730d2a0f6b0f624,
                     0x64774b84f38512bf, 0x4b1ba7b6434bacd7, 0x1a0111ea397fe69a};
+  mixed_in(a[0], 6, index);
+  mixed_in(a[1], 6, index);
+  mixed_in(b[0], 6, index);
+  mixed_in(b[1], 6, index);
   uint64_t k = ll_invert_limb(N[0]);
-  printf("mul_mont_384x starts\n");
   mul_mont_384x(result, a, b, N, k);
 
   vec384x result2 = {0};
@@ -284,14 +301,14 @@ void verify_384x(void) {
             "failed, wrong result at index %d, %d: %llx(correct) vs "
             "%llx(wrong)\n",
             i, j, result[i][j], result2[i][j]);
+        return 1;
       }
     }
   }
-  printf("mul_mont_384x done\n");
+  return 0;
 }
 
-int verify_384(void) {
-  printf("verify for 384 bits asm version\n");
+int verify_384_inner(uint8_t index) {
   uint64_t result[6] = {0};
   uint64_t a[6] = {0xce8c0cc97e7a3027, 0xfc15bac58616015,  0x158831ba1c2c4ea6,
                    0x166188c234f8200b, 0x3b59569282528b5e, 0xd63a606f6afeba1};
@@ -300,32 +317,30 @@ int verify_384(void) {
   const uint64_t N[6] = {0xb9feffffffffaaab, 0x1eabfffeb153ffff,
                          0x6730d2a0f6b0f624, 0x64774b84f38512bf,
                          0x4b1ba7b6434bacd7, 0x1a0111ea397fe69a};
+  mixed_in(a, 6, index);
+  mixed_in(b, 6, index);
   uint64_t k = ll_invert_limb(N[0]);
   mul_mont_n(result, a, b, N, k, 6);
 
-  printf("mul_mont_384 starts\n");
   uint64_t result2[6] = {0xff};
   mul_mont_384(result2, a, b, N, k);
   for (int i = 0; i < 6; i++) {
     if (result[i] != result2[i]) {
       printf("failed, wrong result at index %d: %lld(correct) vs %lld(wrong)\n",
              i, result[i], result2[2]);
+      return 1;
     }
   }
-  printf("mul_mont_384 done\n");
 
   uint64_t result3[6] = {0xff};
-  printf("blst_mul_mont_384 starts\n");
   blst_mul_mont_384(result3, a, b, N, k);
   for (int i = 0; i < 6; i++) {
     if (result[i] != result3[i]) {
       printf("failed, wrong result at index %d: %lld(correct) vs %lld(wrong)\n",
              i, result[i], result3[2]);
+      return 1;
     }
   }
-  printf("blst_mul_mont_384 done\n");
-
-  verify_384x();
   return 0;
 }
 
@@ -345,6 +360,34 @@ int bench_384_asm(void) {
   }
   printf("done\n");
   return 0;
+}
+
+int verify_384(void) {
+  int res = 0;
+  printf("verify_384 starts\n");
+  for (uint16_t i = 0; i <= 255; i++) {
+    int r = verify_384_inner(i);
+    if (r != 0) {
+      printf("verify_384_inner failed with %d\n", i);
+    }
+    res |= r;
+  }
+  printf("verify_384 done\n");
+  return res;
+}
+
+int verify_384x(void) {
+  int res = 0;
+  printf("verify_384x starts\n");
+  for (uint16_t i = 0; i <= 255; i++) {
+    int r = verify_384x_inner(i);
+    if (r != 0) {
+      printf("verify_384x_inner faild with %d\n", i);
+    }
+    res |= r;
+  }
+  printf("verify_384x done\n");
+  return res;
 }
 
 int bench_384_asm2(void) {
@@ -403,7 +446,9 @@ int main(int argc, const char* argv[]) {
     return bench_384x();
   }
   if (strcmp(argv[1], "-verify384") == 0) {
-    return verify_384();
+    int res = verify_384();
+    res |= verify_384x();
+    return res;
   }
   if (strcmp(argv[1], "-bench384asm") == 0) {
     return bench_384_asm();

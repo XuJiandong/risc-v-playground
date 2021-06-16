@@ -1,7 +1,3 @@
-# TODO: optimization
-# 1. aggregate pushq operation
-# 2. don't carry if not needed (less sltu)
-# 3. adcq/sbbq
 
 import re
 import argparse
@@ -209,6 +205,9 @@ class RiscvInstruction:
     def set_origin_x64(self, asm):
         self.x64asm = asm
 
+    def get_origin_x64(self):
+        return self.x64asm
+
     def optimize_str(self, s):
         if self.optimized:
             return "# optimized: " + s
@@ -252,7 +251,7 @@ class X64Insruction:
     def src(self, index=0):
         return X64Operand(self.operands[index])
 
-    def translate(self, carry=True):
+    def translate(self, carry):
         if self.opcode == "pushq":
             return self.trans_pushq()
         elif self.opcode == "popq":
@@ -812,6 +811,12 @@ def check_stack(instructions):
             imm = inst.operands[2].to_riscv()
             if dest == "sp" and src == "sp":
                 offset += int(imm)
+            # addi    a4, sp, 328
+            # addi    sp, a4, 48
+            # special code for 384x
+            if dest == "sp" and src == "a4" and imm == "48":
+                offset += 376
+
     if offset != 0:
         print(f"the stack is not balanced: {offset}")
     else:
@@ -861,8 +866,10 @@ def optimize_push(instructions):
         imm = []
         regs = []
         inst2 = []
+        x64 = []
 
         while is_addi(instructions[index]) and is_sd(instructions[index+1]):
+            x64 += [instructions[index].get_origin_x64()]
             offset = int(instructions[index].operands[2].to_riscv())
             imm += [offset]
             regs += [instructions[index+1].operands[0].to_riscv()]
@@ -879,7 +886,8 @@ def optimize_push(instructions):
                 inst2.append(RiscvInstruction(
                     f"sd {reg}, {offset}(sp)", raw=True))
                 offset -= 8
-
+            res += [RiscvInstruction(f"# {' '.join(x)}", raw=True)
+                    for x in x64]
             res += inst2
             res += [instructions[index]]
         else:
@@ -965,7 +973,7 @@ def convert(asm, output_file):
             carry = False
             if can_modify_carry(fields[0]):
                 carry = detect_carry(asm, index + 1)
-            riscv0 = x64.translate(carry=carry)
+            riscv0 = x64.translate(carry)
             if not isinstance(riscv0, list):
                 riscv.append(riscv0)
             else:
@@ -1013,7 +1021,7 @@ def convert(asm, output_file):
             assert False
 
     # print("start optimizing...")
-    # instructions = optimize_push(instructions)
+    instructions = optimize_push(instructions)
 
     total_opcode = 0
     total_cycles = 0

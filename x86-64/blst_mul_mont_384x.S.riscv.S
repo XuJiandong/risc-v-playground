@@ -10,24 +10,19 @@ sd ra, 0(sp)
 # .byte    0xf3, 0x0f, 0x1e, 0xfa
 # special directive: ['.byte', '0xf3', '0x0f', '0x1e', '0xfa']
 # pushq    %rbp
-addi    sp, sp, -8
-sd    fp, 0(sp)
-# pushq    %rbx
-addi    sp, sp, -8
-sd    s1, 0(sp)
-# pushq    %r12
-addi    sp, sp, -8
-sd    s2, 0(sp)
-# pushq    %r13
-addi    sp, sp, -8
-sd    s3, 0(sp)
-# pushq    %r14
-addi    sp, sp, -8
-sd    s4, 0(sp)
-# pushq    %r15
-addi    sp, sp, -8
-sd    s5, 0(sp)
-# subq    $328, %rsp
+# pushq %rbp
+# pushq %rbx
+# pushq %r12
+# pushq %r13
+# pushq %r14
+# pushq %r15
+addi    sp, sp, -48
+sd fp, 40(sp)
+sd s1, 32(sp)
+sd s2, 24(sp)
+sd s3, 16(sp)
+sd s4, 8(sp)
+sd s5, 0(sp)
 addi    sp, sp, -328
 # movq    %rdx, %rbx
 add    s1, a2, zero

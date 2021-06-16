@@ -8,7 +8,6 @@ uint64_t test_add(void);
 uint64_t test_lea(void);
 uint64_t test_adc_sbb(void);
 
-
 #define CF 0x0001
 #define ZF 0x0040
 #define SF 0x0080
@@ -41,7 +40,6 @@ int main(int argc, const char *argv[]) {
   printf("test_adc_sbb:\n");
   dump_flags(res);
 
-  
   res = test_lea();
   return 0;
 }
