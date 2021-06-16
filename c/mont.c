@@ -255,19 +255,35 @@ int bench_384x_asm2(void) {
   return 0;
 }
 
-void mixed_in(uint64_t* array, size_t length, uint8_t input) {
-  // uint64_t val = input;
-  for (size_t i = 0; i < length; i++) {
-    // array[i] += val;
-    // array[i] += val << 8;
-    // array[i] += val << 16;
-    // array[i] += val << 32;
-    // array[i] += val << 40;
-    // array[i] += val << 48;
-    // array[i] += val << 56;
-    uint8_t* ptr = (uint8_t*)&array[i];
-    ptr[7] = input;
+void check_3bits(uint64_t* array, size_t length) {
+  uint64_t high = array[length - 1];
+  uint8_t* ptr = (uint8_t*)&high;
+  uint8_t high_byte = ptr[7];
+
+  if (high_byte & 0b11100000) {
+    printf("the most 3 significate bits are not zero, error");
   }
+}
+
+void set_3bits(uint64_t* array, size_t length) {
+  uint64_t* high = array + length - 1;
+  uint8_t* ptr = (uint8_t*)high;
+  ptr[7] &= 0b00011111;
+}
+
+void mixed_in(uint64_t* array, size_t length, uint8_t input) {
+  check_3bits(array, length);
+  uint64_t val = input;
+  for (size_t i = 0; i < length; i++) {
+    array[i] += val;
+    array[i] += val << 8;
+    array[i] += val << 16;
+    array[i] += val << 32;
+    array[i] += val << 40;
+    array[i] += val << 48;
+    array[i] += val << 56;
+  }
+  set_3bits(array, length);
 }
 
 int verify_384x_inner(uint8_t index) {
@@ -286,9 +302,9 @@ int verify_384x_inner(uint8_t index) {
   const vec384 N = {0xb9feffffffffaaab, 0x1eabfffeb153ffff, 0x6730d2a0f6b0f624,
                     0x64774b84f38512bf, 0x4b1ba7b6434bacd7, 0x1a0111ea397fe69a};
   mixed_in(a[0], 6, index);
-  mixed_in(a[1], 6, index);
-  mixed_in(b[0], 6, index);
-  mixed_in(b[1], 6, index);
+  mixed_in(a[1], 6, index + 1);
+  mixed_in(b[0], 6, index + 2);
+  mixed_in(b[1], 6, index + 3);
   uint64_t k = ll_invert_limb(N[0]);
   mul_mont_384x(result, a, b, N, k);
 
@@ -318,7 +334,7 @@ int verify_384_inner(uint8_t index) {
                          0x6730d2a0f6b0f624, 0x64774b84f38512bf,
                          0x4b1ba7b6434bacd7, 0x1a0111ea397fe69a};
   mixed_in(a, 6, index);
-  mixed_in(b, 6, index);
+  mixed_in(b, 6, index + 1);
   uint64_t k = ll_invert_limb(N[0]);
   mul_mont_n(result, a, b, N, k, 6);
 
@@ -369,8 +385,8 @@ int verify_384(void) {
     int r = verify_384_inner(i);
     if (r != 0) {
       printf("verify_384_inner failed with %d\n", i);
+      return r;
     }
-    res |= r;
   }
   printf("verify_384 done\n");
   return res;
@@ -383,8 +399,8 @@ int verify_384x(void) {
     int r = verify_384x_inner(i);
     if (r != 0) {
       printf("verify_384x_inner faild with %d\n", i);
+      return r;
     }
-    res |= r;
   }
   printf("verify_384x done\n");
   return res;
