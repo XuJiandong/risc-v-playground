@@ -156,6 +156,17 @@ bench-mont-384-s:
 verify-mont-384:
 	$(CKB_VM_CLI) --bin build/mont -- -verify384
 
+
+### bench blake2b
+build/bench_blake2b: c/bench_blake2b.c
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $<
+
+build/bench_blake2b-via-docker:
+	docker run --rm -v `pwd`:/code ${BUILDER_DOCKER} bash -c "cd /code && make build/bench_blake2b"
+
+bench_blake2b: build/bench_blake2b-via-docker
+	ckb-vm-cli --bin build/bench_blake2b || exit 0
+
 fmt:
 	clang-format -i -style=Google $(wildcard c/*.c c/*.h)
 
