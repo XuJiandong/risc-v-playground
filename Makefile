@@ -175,5 +175,5 @@ clean:
 
 install-tools:
 	echo "start to install tool: ckb-vm-cli and ckb-vm-b-cli"
-	cargo install --git https://github.com/XuJiandong/ckb-vm-cli.git --branch master
-	cargo install --git https://github.com/XuJiandong/ckb-vm-cli.git --branch b-extension
+	cargo install --git https://github.com/XuJiandong/ckb-vm-cli.git ckb-vm-cli --branch master
+	cargo install --git https://github.com/XuJiandong/ckb-vm-cli.git ckb-vm-b-cli --branch b-extension
