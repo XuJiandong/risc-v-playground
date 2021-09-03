@@ -5,6 +5,7 @@ CC := $(TARGET)-gcc
 LD := $(TARGET)-gcc
 OBJCOPY := $(TARGET)-objcopy
 CKB_VM_CLI=ckb-vm-b-cli
+CKB-DEBUGGER=ckb-debugger
 
 CLANG-CC = /usr/local/opt/llvm/bin/clang
 
@@ -35,7 +36,7 @@ X64_LDFLAGS :=
 # docker pull nervos/ckb-riscv-gnu-toolchain:gnu-bionic-20191012
 BUILDER_DOCKER := nervos/ckb-riscv-gnu-toolchain@sha256:aae8a3f79705f67d505d1f1d5ddc694a4fd537ed1c7e9622420a470d59ba2ec3
 
-all: build/hello build/test_asm build/mont
+all: build/hello build/test_asm build/mont build/inline
 
 all-via-docker:
 	docker run --rm -v `pwd`:/code ${BUILDER_DOCKER} bash -c "cd /code && make"
@@ -156,6 +157,13 @@ bench-mont-384-s:
 verify-mont-384:
 	$(CKB_VM_CLI) --bin build/mont -- -verify384
 
+### inline assembly
+build/inline: c/inline.c
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $<
+	$(CC) -S -c $(CFLAGS) $(LDFLAGS) -o $@.S $<
+
+run-inline: build/inline
+	$(CKB-DEBUGGER) --simple-binary $<
 
 ### bench blake2b
 build/bench_blake2b: c/bench_blake2b.c
