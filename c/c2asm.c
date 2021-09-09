@@ -1,6 +1,22 @@
 
 #include <stdint.h>
 
+
+typedef unsigned int u128 __attribute__((mode(TI)));
+
+u128 test_u128(uint64_t a, uint64_t b) {
+  u128 a2 = a;
+  u128 r = a2 * b;
+  return r;
+}
+
+u128 test_u128_example() {
+  uint64_t a = -1;
+  uint64_t b = -1;
+  u128 r = test_u128(a, b);  
+  return r;
+}
+
 uint32_t add(uint32_t a, uint32_t b) { return a + b; }
 
 uint32_t loop_and_add(uint32_t count) {
