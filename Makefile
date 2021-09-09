@@ -1,10 +1,9 @@
 TARGET := riscv64-unknown-linux-gnu
 # other option 
-# TARGET := riscv64-unknown-elf
+# TARGET2 := riscv64-unknown-elf
 CC := $(TARGET)-gcc
 LD := $(TARGET)-gcc
 OBJCOPY := $(TARGET)-objcopy
-CKB_VM_CLI=ckb-vm-b-cli
 CKB-DEBUGGER=ckb-debugger
 
 CLANG-CC = /usr/local/opt/llvm/bin/clang
@@ -129,33 +128,33 @@ c2asm:
 
 ### run
 run-hello:
-	$(CKB_VM_CLI) --bin build/hello
+	$(CKB-DEBUGGER) --bin build/hello
 
 run-test-asm:
-	$(CKB_VM_CLI) --bin build/test_asm
+	$(CKB-DEBUGGER) --bin build/test_asm
 
 run-test-asm-x64: build/test_asm_x64
 	build/test_asm_x64
 
 run-mont:
-	echo "using $(CKB_VM_CLI)"
-	$(CKB_VM_CLI) --bin build/mont -- -asm
-	$(CKB_VM_CLI) --bin build/mont -- -c
+	echo "using $(CKB-DEBUGGER)"
+	$(CKB-DEBUGGER) --bin build/mont -- mont -asm
+	$(CKB-DEBUGGER) --bin build/mont -- mont -c
 
 bench-mont-384:
-	$(CKB_VM_CLI) --bin build/mont -- -bench384
-	$(CKB_VM_CLI) --bin build/mont -- -bench384asm
-	$(CKB_VM_CLI) --bin build/mont -- -bench384asm2
-	$(CKB_VM_CLI) --bin build/mont -- -bench384x
-	$(CKB_VM_CLI) --bin build/mont -- -bench384xasm2
+	$(CKB-DEBUGGER) --bin build/mont -- mont -bench384
+	$(CKB-DEBUGGER) --bin build/mont -- mont -bench384asm
+	$(CKB-DEBUGGER) --bin build/mont -- mont -bench384asm2
+	$(CKB-DEBUGGER) --bin build/mont -- mont -bench384x
+	$(CKB-DEBUGGER) --bin build/mont -- mont -bench384xasm2
 
 bench-mont-384-s:
-	$(CKB_VM_CLI) --bin build/mont_s -- -bench384
-	$(CKB_VM_CLI) --bin build/mont_s -- -bench384asm
+	$(CKB-DEBUGGER) --bin build/mont_s -- mont -bench384
+	$(CKB-DEBUGGER) --bin build/mont_s -- mont -bench384asm
 
 
 verify-mont-384:
-	$(CKB_VM_CLI) --bin build/mont -- -verify384
+	$(CKB-DEBUGGER) --bin build/mont -- mont -verify384
 
 ### inline assembly
 build/inline: c/inline.c
@@ -166,14 +165,14 @@ run-inline: build/inline
 	$(CKB-DEBUGGER) --simple-binary $<
 
 ### bench blake2b
-build/bench_blake2b: c/bench_blake2b.c
+build/bench_blake2b: c/bench_blake2b.c	
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $<
 
 build/bench_blake2b-via-docker:
 	docker run --rm -v `pwd`:/code ${BUILDER_DOCKER} bash -c "cd /code && make build/bench_blake2b"
 
 bench_blake2b: build/bench_blake2b-via-docker
-	ckb-vm-cli --bin build/bench_blake2b || exit 0
+	$(CKB-DEBUGGER) --bin build/bench_blake2b || exit 0
 
 fmt:
 	clang-format -i -style=Google $(wildcard c/*.c c/*.h)
@@ -182,6 +181,4 @@ clean:
 	rm -rf build/*
 
 install-tools:
-	echo "start to install tool: ckb-vm-cli and ckb-vm-b-cli"
-	cargo install --git https://github.com/XuJiandong/ckb-vm-cli.git ckb-vm-cli --branch master
-	cargo install --git https://github.com/XuJiandong/ckb-vm-cli.git ckb-vm-b-cli --branch b-extension
+	cargo install --git https://github.com/nervosnetwork/ckb-standalone-debugger.git ckb-debugger --branch master

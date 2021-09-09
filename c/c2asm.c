@@ -17,6 +17,11 @@ u128 test_u128_example() {
   return r;
 }
 
+uint64_t rotr64(const uint64_t w, const unsigned c) {
+  return (w >> c) | (w << (64 - c));
+}
+
+
 uint32_t add(uint32_t a, uint32_t b) { return a + b; }
 
 uint32_t loop_and_add(uint32_t count) {
