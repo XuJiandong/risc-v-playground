@@ -3,7 +3,7 @@ playground of risc-v
 
 
 ### how to build
-Do it ony once:
+Do it only once:
 ```
 make install-tools
 ```
