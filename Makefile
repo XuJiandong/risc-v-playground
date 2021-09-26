@@ -43,7 +43,7 @@ all-via-docker:
 ### simple hello world
 build/hello: c/hello.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $<
-	$(OBJCOPY) --only-keep-debug $@ $@.debug
+	cp $@ $@.debug
 	$(OBJCOPY) --strip-debug --strip-all $@
 
 ### simple hello world by clang
