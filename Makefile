@@ -181,4 +181,4 @@ clean:
 	rm -rf build/*
 
 install-tools:
-	cargo install --git https://github.com/nervosnetwork/ckb-standalone-debugger.git ckb-debugger --branch master
+	cargo install --git https://github.com/nervosnetwork/ckb-standalone-debugger.git ckb-debugger-binaries --branch develop
