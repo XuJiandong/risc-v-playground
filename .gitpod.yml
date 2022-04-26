@@ -3,6 +3,19 @@
 # and commit this file to your remote git repository to share the goodness with others.
 
 tasks:
-- command: |
-    echo ">>>>"
-    curl "https://gist.githubusercontent.com/XuJiandong/557f2955a0c313cfef899f6ef830d712/raw/d16d20861b7e3ce2764d6811bf477fdfeccf9256/gitpod-init.sh" | bash
+  - name: default one
+    before: |
+      curl "https://gist.githubusercontent.com/XuJiandong/557f2955a0c313cfef899f6ef830d712/raw/e942a9801f3a8e31be505c81d1d724d8ca4af93e/gitpod-init.sh" | bash
+    init: |
+      echo "make all-via-docker"
+    command: |
+      echo "Start some server"
+      source ~/.bashrc
+  - name: working
+    command: |
+      source ~/.bashrc
+
+vscode:
+  extensions:
+    - matklad.rust-analyzer
+
