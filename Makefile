@@ -35,7 +35,7 @@ X64_LDFLAGS :=
 # docker pull nervos/ckb-riscv-gnu-toolchain:gnu-bionic-20191012
 BUILDER_DOCKER := nervos/ckb-riscv-gnu-toolchain@sha256:aae8a3f79705f67d505d1f1d5ddc694a4fd537ed1c7e9622420a470d59ba2ec3
 
-all: build/hello build/test_asm build/mont build/inline build/old_crt
+all: build/hello build/test_asm build/mont build/inline build/float build/old_crt
 
 all-via-docker:
 	docker run --rm -v `pwd`:/code ${BUILDER_DOCKER} bash -c "cd /code && make"
@@ -178,6 +178,9 @@ bench_blake2b: build/bench_blake2b-via-docker
 build/old_crt: c/old_crt.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -lm -o $@ $<
 
+### float
+build/float: c/float.c
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $<
 
 fmt:
 	clang-format -i -style=Google $(wildcard c/*.c c/*.h)

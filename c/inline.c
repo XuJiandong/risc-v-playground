@@ -26,11 +26,19 @@ int main2(int a, int b, int c) {
   return r;
 }
 
+void six_copy(uint64_t *dst, const uint64_t *src) {
+  *(dst + 0) = *(src + 0);
+  *(dst + 1) = *(src + 1);
+  *(dst + 2) = *(src + 2);
+  *(dst + 3) = *(src + 3);
+  *(dst + 4) = *(src + 4);
+  *(dst + 5) = *(src + 5);
+}
+
 
 int main(int argc, const char* argv[]) {
   int r = main2(100, 200, 300);
   printf("result is %d\n", r);
   return 0;
 }
-
 
