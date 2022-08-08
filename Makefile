@@ -6,7 +6,7 @@ LD := $(TARGET)-gcc
 OBJCOPY := $(TARGET)-objcopy
 CKB-DEBUGGER=ckb-debugger
 
-CLANG-CC = /usr/local/opt/llvm/bin/clang
+CLANG-CC = clang
 
 # -fno-builtin-printf must be used to use our own printf
 CFLAGS := -fPIC -O3 -fno-builtin-printf -fno-builtin-memcmp \
@@ -35,7 +35,7 @@ X64_LDFLAGS :=
 # docker pull nervos/ckb-riscv-gnu-toolchain:gnu-bionic-20191012
 BUILDER_DOCKER := nervos/ckb-riscv-gnu-toolchain@sha256:aae8a3f79705f67d505d1f1d5ddc694a4fd537ed1c7e9622420a470d59ba2ec3
 
-all: build/hello build/test_asm build/mont build/inline
+all: build/hello build/test_asm build/mont build/inline build/old_crt
 
 all-via-docker:
 	docker run --rm -v `pwd`:/code ${BUILDER_DOCKER} bash -c "cd /code && make"
@@ -173,6 +173,11 @@ build/bench_blake2b-via-docker:
 
 bench_blake2b: build/bench_blake2b-via-docker
 	$(CKB-DEBUGGER) --bin build/bench_blake2b || exit 0
+
+### using old crt
+build/old_crt: c/old_crt.c
+	$(CC) $(CFLAGS) $(LDFLAGS) -lm -o $@ $<
+
 
 fmt:
 	clang-format -i -style=Google $(wildcard c/*.c c/*.h)
