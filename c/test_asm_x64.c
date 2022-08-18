@@ -15,31 +15,31 @@ uint64_t test_adc_sbb(void);
 #define IS_ONE(s) ((s) ? 1 : 0)
 
 void dump_flags(uint64_t flags) {
-  printf("CF = %d, ", IS_ONE(flags & CF));
-  printf("ZF = %d, ", IS_ONE(flags & ZF));
-  printf("SF = %d, ", IS_ONE(flags & SF));
-  printf("OF = %d\n", IS_ONE(flags & OF));
+    printf("CF = %d, ", IS_ONE(flags & CF));
+    printf("ZF = %d, ", IS_ONE(flags & ZF));
+    printf("SF = %d, ", IS_ONE(flags & SF));
+    printf("OF = %d\n", IS_ONE(flags & OF));
 }
 
 int main(int argc, const char *argv[]) {
-  uint64_t res = 0;
+    uint64_t res = 0;
 
-  res = test_add();
-  printf("test_add:\n");
-  dump_flags(res);
+    res = test_add();
+    printf("test_add:\n");
+    dump_flags(res);
 
-  res = test_sbb();
-  printf("test_sbb:\n");
-  dump_flags(res);
+    res = test_sbb();
+    printf("test_sbb:\n");
+    dump_flags(res);
 
-  res = test_adc();
-  printf("test_adc:\n");
-  dump_flags(res);
+    res = test_adc();
+    printf("test_adc:\n");
+    dump_flags(res);
 
-  res = test_adc_sbb();
-  printf("test_adc_sbb:\n");
-  dump_flags(res);
+    res = test_adc_sbb();
+    printf("test_adc_sbb:\n");
+    dump_flags(res);
 
-  res = test_lea();
-  return 0;
+    res = test_lea();
+    return 0;
 }

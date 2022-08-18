@@ -61,11 +61,11 @@ with_structure_args(uint64_t a64, uint32_t a32, uint16_t a16, uint8_t a8,
 
 uint64_t __attribute__((noinline))
 with_many_args(uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a4, uint64_t a5,
-               uint64_t a6, uint64_t a7, uint64_t a8, uint64_t a9, uint64_t a10) {
+               uint64_t a6, uint64_t a7, uint64_t a8, uint64_t a9,
+               uint64_t a10) {
     uint64_t sum = a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8 + a9 + a10;
     return sum;
 }
-
 
 uint64_t call() {
     StructArgs args = {.a1 = 100, .a2 = 200, .a3 = 300};

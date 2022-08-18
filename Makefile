@@ -183,7 +183,7 @@ build/float: c/float.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $<
 
 fmt:
-	clang-format -i -style=Google $(wildcard c/*.c c/*.h)
+	clang-format -i -style="{BasedOnStyle: google, IndentWidth: 4, SortIncludes: false}" $(wildcard c/*.c c/*.h)
 
 clean:
 	rm -rf build/*

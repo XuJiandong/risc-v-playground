@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+
 #include "ckb_syscalls.h"
 
 double pow(double, double);
@@ -12,4 +13,3 @@ int main() {
     printf("2 ** 3 = %d", v);
     return 0;
 }
-

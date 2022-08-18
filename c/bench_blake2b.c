@@ -1,9 +1,9 @@
 #include <blake2b.h>
 #include <stdint.h>
 
-int main(int argc, const char* argv[]) {
+int main(int argc, const char *argv[]) {
     uint8_t result[32] = {0};
-    uint8_t random_data[100] = {1,2,3,4,5};
+    uint8_t random_data[100] = {1, 2, 3, 4, 5};
 
     blake2b_state ctx;
 
