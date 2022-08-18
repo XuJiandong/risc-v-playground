@@ -180,7 +180,7 @@ build/old_crt: c/old_crt.c
 
 ### float
 build/float: c/float.c
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $<
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $< $(shell $(CC) --print-search-dirs | sed -n '/install:/p' | sed 's/install:\s*//g')libgcc.a
 
 fmt:
 	clang-format -i -style="{BasedOnStyle: google, IndentWidth: 4, SortIncludes: false}" $(wildcard c/*.c c/*.h)
