@@ -7,11 +7,13 @@
 
     
 int main() {
-    double a = 1.0;
-    double b = 2.0;
+    double a = 100.1;
+    double b = 200.2;
+    double c = 300.3;
+    double d = 400.4;
+    double r = (c+d*b)/a;
 
-    double c = a + b;
-    int res = (int)c;
+    int res = (int)r;
     printf("%d\n", res);
     return 0;
 }
