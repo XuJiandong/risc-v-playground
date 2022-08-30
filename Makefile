@@ -1,21 +1,21 @@
-TARGET := riscv64-unknown-linux-gnu
-# other option 
-# TARGET2 := riscv64-unknown-elf
+TARGET ?= riscv64-unknown-linux-gnu
+
+# use local version
+# TARGET := riscv64-unknown-elf
+# EXTRA_CFLAGS := -march=rv64imac -mabi=lp64
+
 CC := $(TARGET)-gcc
 LD := $(TARGET)-gcc
 OBJCOPY := $(TARGET)-objcopy
 CKB-DEBUGGER=ckb-debugger
 
-CLANG-CC = clang
 
 # -fno-builtin-printf must be used to use our own printf
 CFLAGS := -fPIC -O3 -fno-builtin-printf -fno-builtin-memcmp \
--nostdinc -nostdlib -nostartfiles -fvisibility=hidden \
+-nostdinc -nostdlib  -fvisibility=hidden \
 -fdata-sections -ffunction-sections\
 -I deps/ckb-c-stdlib -I deps/ckb-c-stdlib/libc \
--Wall -Werror -Wno-nonnull -Wno-nonnull-compare -Wno-unused-function -g
-
-CLANG-CFLAGS=-target riscv64-unknown-elf -march=rv64imc -mno-relax $(subst -nostartfiles,,$(subst -Wno-nonnull-compare,,$(CFLAGS))) 
+-Wall -Werror -Wno-nonnull -Wno-unused-function -g $(EXTRA_CFLAGS)
 
 # used to generate assembly code
 ASM_CFLAGS := -S -O3 \
@@ -23,19 +23,27 @@ ASM_CFLAGS := -S -O3 \
 -nostdinc -nostdlib -nostartfiles -fvisibility=hidden \
 -I deps/ckb-c-stdlib -I deps/ckb-c-stdlib/libc
 
-LDFLAGS := -Wl,-static -Wl,--gc-sections
+LDFLAGS := -Wl,-static -Wl,--gc-sections -nostartfiles
 
-CLANG-LDLAGS=$(subst -Wl,--gc-sections,,$(LDFLAGS))
 
 X64_CC := clang
 X64_CFLAGS := -fPIC -g
 X64_LDFLAGS :=
+
+### using llvm toolchain
+CLANG-CC = clang
+
+CLANG-CFLAGS=-target riscv64-unknown-elf -march=rv64imc -mno-relax $(CFLAGS)
+## TODO: gc-section alternative?
+CLANG-LDFLAGS=-Wl,-static
 
 
 # docker pull nervos/ckb-riscv-gnu-toolchain:gnu-bionic-20191012
 BUILDER_DOCKER := nervos/ckb-riscv-gnu-toolchain@sha256:aae8a3f79705f67d505d1f1d5ddc694a4fd537ed1c7e9622420a470d59ba2ec3
 
 all: build/hello build/test_asm build/mont build/inline build/float build/old_crt
+
+llvm: build/hello2
 
 all-via-docker:
 	docker run --rm -v `pwd`:/code ${BUILDER_DOCKER} bash -c "cd /code && make"
@@ -52,6 +60,8 @@ build/hello: c/hello.c
 # 2. support syscall
 build/hello2: c/hello2.c
 	$(CLANG-CC) $(CLANG-CFLAGS) $(CLANG-LDFLAGS) -o $@ $<
+	cp $@ $@.debug
+	llvm-objcopy --strip-debug --strip-all $@
 
 ### test_asm
 build/asm.o: c/asm.S
@@ -187,6 +197,10 @@ fmt:
 
 clean:
 	rm -rf build/*
+
+
+clean-llvm:
+	rm -f build/hello2
 
 install-tools:
 	cargo install --git https://github.com/nervosnetwork/ckb-standalone-debugger.git ckb-debugger-binaries --branch develop
