@@ -1,9 +1,0 @@
-{
-    "files.associations": {
-        "ml": "OCaml",
-        "mli": "OCaml",
-        "mll": "OCaml",
-        "mly": "OCaml",
-        "ckb_syscalls.h": "c"
-    }
-}

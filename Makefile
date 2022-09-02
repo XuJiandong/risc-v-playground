@@ -41,7 +41,7 @@ CLANG-LDFLAGS=-Wl,-static
 # docker pull nervos/ckb-riscv-gnu-toolchain:gnu-bionic-20191012
 BUILDER_DOCKER := nervos/ckb-riscv-gnu-toolchain@sha256:aae8a3f79705f67d505d1f1d5ddc694a4fd537ed1c7e9622420a470d59ba2ec3
 
-all: build/hello build/test_asm build/mont build/inline build/float build/old_crt
+all: build/hello build/test_asm build/mont build/inline build/float build/old_crt build/metadata
 
 llvm: build/hello2
 
@@ -53,6 +53,11 @@ build/hello: c/hello.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $<
 	cp $@ $@.debug
 	$(OBJCOPY) --strip-debug --strip-all $@
+
+build/metadata: c/metadata.c
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $<
+	readelf -p ckb.memory_limit $@
+
 
 ### simple hello world by clang
 # TODO: 
