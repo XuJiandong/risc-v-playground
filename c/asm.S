@@ -12,7 +12,12 @@ add:
     addw	a0,a0,a1
 	ret
 
-    
+.global a_ctz
+.align 4
+a_ctz:
+    .byte 0x13, 0x15, 0x15, 0x60
+    ret
+
 .global print_hello
 print_hello:
     addi sp, sp, -16

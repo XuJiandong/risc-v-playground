@@ -146,7 +146,7 @@ run-hello:
 	$(CKB-DEBUGGER) --bin build/hello
 
 run-test-asm:
-	$(CKB-DEBUGGER) --bin build/test_asm
+	RUST_LOG=debug $(CKB-DEBUGGER) --bin build/test_asm
 
 run-test-asm-x64: build/test_asm_x64
 	build/test_asm_x64
