@@ -14,6 +14,11 @@ uint32_t add(uint32_t a, uint32_t b);
 int print_hello(void);
 uint64_t a_ctz(uint64_t x);
 
+static int __attribute__((naked)) first_set(uint64_t x) {
+  __asm__(".byte  0x13, 0x15, 0x15, 0x60");
+  __asm__("ret");
+}
+
 int main(int argc, const char *argv[]) {
     void_call();
     printf("void_call()");
@@ -25,6 +30,9 @@ int main(int argc, const char *argv[]) {
     printf("a_ctz(1 << 4) = %llu", zs);
     zs = a_ctz(1L << 62);
     printf("a_ctz(1 << 62) = %llu", zs);
+
+    zs = first_set(1L << 31);
+    printf("a_ctz(1 << 31) = %llu", zs);
 
     return 0;
 }
