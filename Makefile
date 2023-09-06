@@ -26,17 +26,19 @@ ASM_CFLAGS := -S -O3 \
 LDFLAGS := -Wl,-static -Wl,--gc-sections -nostartfiles
 
 
-X64_CC := clang
-X64_CFLAGS := -fPIC -g
-X64_LDFLAGS :=
+NATIVE_CC := clang
+NATIVE_CFLAGS := -fPIC -g
+NATIVE_LDFLAGS :=
 
 ### using llvm toolchain
-CLANG-CC = /lib/llvm-15/bin/clang
-CLANG-CFLAGS=-target riscv64-unknown-elf -march=rv64imc -mno-relax $(CFLAGS)
-CLANG-LDFLAGS=-Wl,-static -Wl,--gc-sections
+CLANG_CC := clang-16
+CLANG_CFLAGS := -g -O3 --target=riscv64 -march=rv64imc -ffunction-sections -fdata-sections
+CLANG_CFLAGS += -fno-builtin-printf -fno-builtin-memcmp -nostdinc -nostdlib
+CLANG_CFLAGS += -I deps/ckb-c-stdlib -I deps/ckb-c-stdlib/libc
+CLANG_LDFLAGS := -Wl,-static -Wl,--gc-sections
 
-# docker pull nervos/ckb-riscv-gnu-toolchain:gnu-bionic-20191012
-BUILDER_DOCKER := nervos/ckb-riscv-gnu-toolchain@sha256:aae8a3f79705f67d505d1f1d5ddc694a4fd537ed1c7e9622420a470d59ba2ec3
+# docker pull nervos/ckb-riscv-gnu-toolchain:gnu-jammy-20230214
+BUILDER_DOCKER := nervos/ckb-riscv-gnu-toolchain@sha256:d3f649ef8079395eb25a21ceaeb15674f47eaa2d8cc23adc8bcdae3d5abce6ec
 
 all: build/hello build/test_asm build/mont build/inline build/float build/old_crt build/metadata
 
@@ -57,11 +59,8 @@ build/metadata: c/metadata.c
 
 
 ### simple hello world by clang
-# TODO: 
-# 1. support entry in assembly
-# 2. support syscall
 build/hello2: c/hello2.c
-	$(CLANG-CC) $(CLANG-CFLAGS) $(CLANG-LDFLAGS) -o $@ $<
+	$(CLANG_CC) $(CLANG_CFLAGS) $(CLANG_LDFLAGS) -o $@ $<
 	cp $@ $@.debug
 	llvm-objcopy --strip-debug --strip-all $@
 
@@ -77,15 +76,15 @@ build/test_asm: build/test_asm.o build/asm.o
 
 ### test_asm_x64
 build/asm_x64.o: c/asm_x64.S
-	$(X64_CC) -c $(X64_CFLAGS) -o $@ $<
-	$(X64_CC) -S -c $(X64_CFLAGS) -o $@.S $<
+	$(NATIVE_CC) -c $(NATIVE_CFLAGS) -o $@ $<
+	$(NATIVE_CC) -S -c $(NATIVE_CFLAGS) -o $@.S $<
 
 build/test_asm_x64.o: c/test_asm_x64.c
-	$(X64_CC) -c $(X64_CFLAGS) -o $@ $<
-	$(X64_CC) -S -c $(X64_CFLAGS) -o $@.S $<
+	$(NATIVE_CC) -c $(NATIVE_CFLAGS) -o $@ $<
+	$(NATIVE_CC) -S -c $(NATIVE_CFLAGS) -o $@.S $<
 
 build/test_asm_x64: build/test_asm_x64.o build/asm_x64.o
-	$(X64_CC) $(X64_CFLAGS) $(X64_LDFLAGS) -o $@ $^
+	$(NATIVE_CC) $(NATIVE_CFLAGS) $(NATIVE_LDFLAGS) -o $@ $^
 
 
 ### montgomery multiplicaton
